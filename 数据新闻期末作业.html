@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>暗涌 · 网络厕所 | 交互式数据新闻</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════ RESET ═══════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px;overflow-x:hidden}
+body{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:#050508;color:#c8c3b8;line-height:1.85;font-size:17px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:rgba(196,18,48,.55);color:#fff}
+:root{
+  --cr:#c41230;--cr2:#e8878f;--cr-glow:rgba(196,18,48,.35);--cr-dim:#7a0a1e;
+  --bd:#050508;--b0:#08080f;--b1:#0f0f1a;--b2:#151526;--b3:#1c1c33;
+  --t1:#e8e4dc;--t2:#a09b90;--t3:#5a5650;
+  --br:1px solid #1e1e32;--br2:1px solid #2a2a42;
+  --rd:10px;--rd2:16px;--rd3:24px;
+  --sh:0 4px 24px rgba(0,0,0,.5);--sh2:0 8px 48px rgba(0,0,0,.65);
+  --ease:cubic-bezier(.16,1,.3,1);
+  --serif:'Noto Serif SC',serif;
+}
+
+/* ═══════════════ ATMOSPHERE ═══════════════ */
+body::before{content:'';position:fixed;inset:0;z-index:99997;pointer-events:none;
+  background:radial-gradient(ellipse at 50% -20%,rgba(120,10,30,.06) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 80%,rgba(0,0,0,.3) 0%,transparent 50%);
+}
+.scanlines{position:fixed;inset:0;z-index:99998;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
+}
+
+/* ═══════════════ CINEMATIC INTRO ═══════════════ */
+#intro{position:fixed;inset:0;z-index:100000;background:var(--bd);
+  display:flex;flex-direction:column;align-items:center;
+  transition:opacity 1s var(--ease),visibility 1s;}
+#intro.hide{opacity:0;visibility:hidden;pointer-events:none}
+.phone-box{width:min(260px,70vw);height:min(500px,90vw);background:linear-gradient(160deg,#1a1a2e,#0a0a14);
+  border-radius:32px;border:3px solid #2a2a3f;box-shadow:0 0 80px rgba(196,18,48,.08),0 20px 60px rgba(0,0,0,.6),inset 0 0 40px rgba(0,0,0,.4);
+  position:absolute;top:6%;left:50%;transform:translateX(-50%) scale(.85);overflow:hidden;opacity:0;transition:all 1.2s var(--ease);z-index:2}
+.phone-box.on{opacity:1;transform:translateX(-50%) scale(1)}
+.phone-notch{width:110px;height:24px;background:#000;border-radius:0 0 14px 14px;position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:5}
+.phone-inner{margin:10px;margin-top:34px;margin-bottom:14px;background:#0a0a10;border-radius:20px;height:calc(100% - 48px);overflow:hidden;display:flex;flex-direction:column}
+.ph-status{display:flex;justify-content:space-between;padding:8px 14px 4px;font-size:10px;color:#444;font-family:monospace}
+.ph-notifs{flex:1;padding:6px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;scrollbar-width:none}
+.ph-notifs::-webkit-scrollbar{display:none}
+.nb{background:var(--b2);border:1px solid #1e1e2e;border-radius:12px;padding:9px 13px;opacity:0;transform:translateY(14px);animation:nbIn .4s var(--ease) forwards;position:relative}
+@keyframes nbIn{to{opacity:1;transform:translateY(0)}}
+.nb-app{font-size:9px;color:var(--cr);font-weight:700;letter-spacing:1px;margin-bottom:2px}
+.nb-txt{font-size:12px;color:var(--t1);line-height:1.4}
+.nb-txt b{color:var(--cr);font-weight:600}
+.nb-time{font-size:9px;color:#3a3a3a;margin-top:3px}
+.nb-dot{position:absolute;top:7px;right:9px;width:6px;height:6px;background:var(--cr);border-radius:50%;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+/* Overlay text */
+.cine-overlay{position:absolute;z-index:3;text-align:center;max-width:560px;width:100%;padding:0 20px;pointer-events:none;top:64%;left:50%;transform:translateX(-50%)}
+@media(max-width:500px){.cine-overlay{top:58%}}
+.cl{font-size:clamp(14px,2vw,19px);font-weight:300;color:var(--t2);opacity:0;transform:translateY(12px);transition:all .6s var(--ease);margin-bottom:4px;line-height:1.7}
+.cl.on{opacity:1;transform:translateY(0)}
+.cl.big{font-size:clamp(24px,5vw,38px);font-weight:900;line-height:1.1;margin:10px 0;font-family:var(--serif);letter-spacing:-.5px}
+.cl.red{color:var(--cr);font-weight:600}
+.cl.dim{font-size:13px;color:#444;margin-top:14px}
+.cine-hint{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);z-index:3;opacity:0;transition:opacity .8s;text-align:center}
+.cine-hint.on{opacity:1}
+.cine-hint span{display:block;font-size:11px;color:#3a3a3a;letter-spacing:3px;margin-bottom:6px}
+.cine-hint svg{width:18px;height:18px;opacity:.25;animation:bDown 2s infinite}
+@keyframes bDown{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+
+/* ═══════════════ BRANCH SELECT ═══════════════ */
+#branch{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;position:relative;background:var(--bd)}
+#branch::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 40% at 50% 30%,rgba(196,18,48,.07),transparent 70%)}
+.bs-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px;z-index:1}
+.bs-h1{font-family:var(--serif);font-size:clamp(26px,5vw,48px);font-weight:900;color:var(--t1);text-align:center;line-height:1.15;margin-bottom:10px;z-index:1}
+.bs-sub{font-size:16px;color:var(--t3);text-align:center;max-width:500px;margin-bottom:48px;z-index:1;line-height:1.7}
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:900px;width:100%;z-index:1}
+@media(max-width:800px){.bgrid{grid-template-columns:1fr;max-width:380px}}
+.bcard{background:linear-gradient(160deg,var(--b2),var(--b1));border:var(--br);border-radius:var(--rd3);padding:32px 24px;cursor:pointer;text-align:center;position:relative;overflow:hidden;transition:all .45s var(--ease)}
+.bcard:hover{border-color:var(--cr);transform:translateY(-6px);box-shadow:0 0 40px rgba(196,18,48,.1),var(--sh2)}
+.bcard.sel{border-color:var(--cr);background:linear-gradient(160deg,rgba(196,18,48,.08),var(--b1));box-shadow:0 0 40px rgba(196,18,48,.1)}
+.bc-ico{width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:18px;background:linear-gradient(135deg,rgba(196,18,48,.1),rgba(196,18,48,.03));border:1px solid rgba(196,18,48,.12);transition:all .4s}
+.bcard:hover .bc-ico,.bcard.sel .bc-ico{background:linear-gradient(135deg,rgba(196,18,48,.18),rgba(196,18,48,.06));border-color:rgba(196,18,48,.25);transform:scale(1.06)}
+.bcard h3{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--t1);margin-bottom:8px}
+.bcard p{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:14px}
+.btag{display:inline-block;padding:4px 14px;border-radius:100px;font-size:10px;letter-spacing:1px;border:1px solid #1e1e32;color:var(--t2);transition:all .3s}
+.bcard.sel .btag{border-color:var(--cr);color:var(--cr);background:rgba(196,18,48,.06)}
+#bsConfirm{margin-top:38px;padding:14px 48px;background:linear-gradient(135deg,var(--cr),var(--cr-dim));color:#fff;border:none;border-radius:100px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px;opacity:.28;transition:all .4s var(--ease);z-index:1;box-shadow:0 4px 20px rgba(196,18,48,.25)}
+#bsConfirm:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(196,18,48,.35);opacity:1}
+#bsConfirm:disabled{cursor:not-allowed}
+
+/* ═══════════════ NARRATIVE ═══════════════ */
+#narrative{padding:100px 20px 80px;position:relative;background:var(--b0);overflow:hidden;min-height:100vh}
+.narr-bg-word{position:absolute;font-size:clamp(100px,16vw,240px);font-weight:900;color:rgba(255,255,255,.012);z-index:0;pointer-events:none;font-family:var(--serif);white-space:nowrap;user-select:none}
+.narr-inner{max-width:700px;margin:0 auto;position:relative;z-index:1}
+.narr-chapter{opacity:0;transform:translateY(40px);transition:all .9s var(--ease);margin-bottom:90px}
+.narr-chapter.vis{opacity:1;transform:translateY(0)}
+.nc-badge{font-size:10px;letter-spacing:4px;color:var(--cr);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.nc-badge::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--cr),transparent);opacity:.3}
+.nc-title{font-family:var(--serif);font-size:clamp(24px,3.8vw,38px);font-weight:900;color:var(--t1);margin-bottom:16px;line-height:1.2;letter-spacing:-.3px}
+.nc-body{font-size:16px;color:var(--t2);line-height:2;margin-bottom:20px}
+.nc-body em{color:var(--cr);font-style:normal;font-weight:600}
+.stat-block{display:inline-flex;align-items:baseline;gap:10px;padding:16px 24px;background:rgba(196,18,48,.05);border-left:3px solid var(--cr);border-radius:0 var(--rd) var(--rd) 0;margin:12px 0}
+.stat-num{font-family:var(--serif);font-size:clamp(38px,5.5vw,60px);font-weight:900;color:var(--cr);line-height:1}
+.stat-unit{font-size:15px;font-weight:400;color:var(--t3)}
+.nc-quote{font-family:var(--serif);font-size:18px;color:var(--t1);border-left:2px solid #c9a227;padding:14px 22px;margin:22px 0;background:rgba(201,162,39,.03);border-radius:0 var(--rd) var(--rd) 0;line-height:1.8;font-style:italic}
+.nc-callout{display:flex;align-items:flex-start;gap:18px;background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:22px;margin:24px 0;transition:all .4s}
+.nc-callout:hover{border-color:#2a2a42;transform:translateX(4px)}
+.ncc-ico{font-size:30px;flex-shrink:0;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:rgba(196,18,48,.06);border-radius:50%}
+.ncc-hd{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.ncc-txt{font-size:13px;color:var(--t2);line-height:1.6}
+.ncc-val{font-family:monospace;font-size:22px;font-weight:800;color:var(--cr);margin-top:4px}
+.nc-source{font-size:11px;color:#444;font-family:monospace;margin-top:6px}
+
+/* ═══════════════ INTERACTIVE CARD STACK ═══════════════ */
+#hscroll-wrap{position:relative;padding:80px 20px 100px;background:var(--bd)}
+.hs-inner{max-width:680px;margin:0 auto;text-align:center}
+.hs-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:12px}
+.hs-heading{font-family:var(--serif);font-size:clamp(24px,3.5vw,34px);font-weight:900;color:var(--t1);margin-bottom:8px;line-height:1.2}
+.hs-sub{font-size:14px;color:var(--t3);margin-bottom:36px}
+.hs-stage{position:relative;min-height:320px}
+.hs-card{display:none;max-width:560px;margin:0 auto;padding:48px 36px;background:var(--b2);border:1px solid #1a1a30;border-radius:var(--rd2);text-align:left;animation:hsFadeIn .4s ease}
+.hs-card.active{display:block}
+@keyframes hsFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.hs-step{font-size:10px;letter-spacing:4px;color:var(--cr);font-weight:700;margin-bottom:12px}
+.hs-title{font-family:var(--serif);font-size:clamp(20px,2.8vw,28px);font-weight:900;color:var(--t1);margin-bottom:12px;line-height:1.25}
+.hs-body{font-size:15px;color:var(--t2);line-height:1.9;margin-bottom:20px}
+.hs-data{border-left:3px solid var(--cr);padding:14px 20px;margin:12px 0;background:rgba(196,18,48,.04);border-radius:0 var(--rd2) var(--rd2) 0}
+.hs-data-num{font-family:var(--serif);font-size:36px;font-weight:900;color:var(--cr)}
+.hs-data-label{font-size:13px;color:var(--t2);margin-top:2px}
+.hs-controls{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:36px}
+.hs-btn{width:48px;height:48px;border-radius:50%;border:1px solid #2a2a42;background:rgba(20,20,40,.9);color:#999;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;backdrop-filter:blur(8px)}
+.hs-btn:hover{border-color:var(--cr);color:var(--cr);box-shadow:0 0 16px rgba(196,18,48,.15)}
+.hs-btn:active{transform:scale(.9)}
+.hs-btn:disabled{opacity:.25;cursor:default;pointer-events:none}
+.hs-counter{font-size:13px;color:#555;min-width:52px;text-align:center;font-family:monospace}
+.hs-dots{display:flex;gap:8px}
+.hs-dot{width:8px;height:8px;border-radius:50%;background:#1e1e32;transition:all .3s;cursor:pointer}
+.hs-dot.on{background:var(--cr);box-shadow:0 0 6px rgba(196,18,48,.35)}
+.hs-hint{font-size:11px;color:#333;letter-spacing:2px;margin-top:16px}
+
+/* ═══════════════ DATA SECTION ═══════════════ */
+#data{z-index:2;position:relative;padding:100px 20px 120px;background:var(--b0)}
+.ds-hd{text-align:center;max-width:800px;margin:0 auto 64px}
+.ds-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px}
+.ds-title{font-family:var(--serif);font-size:clamp(28px,4.5vw,44px);font-weight:900;color:var(--t1);line-height:1.15;margin-bottom:14px}
+.ds-desc{font-size:16px;color:var(--t3);max-width:580px;margin:0 auto;line-height:1.8}
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:22px;max-width:1200px;margin:0 auto}
+@media(max-width:460px){.chart-grid{grid-template-columns:1fr}}
+.cc{background:var(--b2);border:var(--br);border-radius:var(--rd3);overflow:hidden;transition:all .5s var(--ease);opacity:0;transform:translateY(30px)}
+.cc.vis{opacity:1;transform:translateY(0)}
+.cc:hover{border-color:#2a2a42;box-shadow:var(--sh)}
+.cc-hd{padding:26px 26px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.cc-hd h3{font-size:16px;font-weight:700;color:var(--t1);line-height:1.3}
+.cc-hd p{font-size:12px;color:var(--t3);margin-top:4px}
+.cc-badge{font-size:9px;letter-spacing:1.5px;padding:3px 10px;border-radius:4px;background:rgba(196,18,48,.08);color:var(--cr);font-weight:700;white-space:nowrap;flex-shrink:0}
+.cc-canvas{padding:16px 16px 0;position:relative;min-height:250px}
+.cc-canvas canvas{width:100%!important}
+.cc-foot{padding:10px 26px 22px;font-size:10px;color:#444;font-family:monospace}
+.cc.chart-full{grid-column:1/-1;max-width:800px;margin:0 auto;width:100%}
+.cc.chart-full .cc-canvas{min-height:320px}
+
+/* ═══════════════ DECISION GAME ═══════════════ */
+#decision{padding:100px 20px;background:var(--b0);position:relative}
+#decision::before{content:'';position:absolute;top:0;left:0;right:0;height:160px;background:linear-gradient(to bottom,rgba(196,18,48,.03),transparent);pointer-events:none}
+.dg-hd{text-align:center;max-width:720px;margin:0 auto 48px}
+.dg-hd h2{font-family:var(--serif);font-size:clamp(26px,4vw,40px);font-weight:900;color:var(--t1);margin-bottom:10px}
+.dg-hd p{font-size:15px;color:var(--t3);line-height:1.7}
+.dg-scene{max-width:680px;margin:0 auto 28px;background:var(--b2);border:var(--br);border-radius:var(--rd3);padding:36px 32px;display:none;position:relative;overflow:hidden}
+.dg-scene.active{display:block;animation:slideUp .5s var(--ease)}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.sr-role{display:inline-flex;align-items:center;gap:8px;font-size:10px;letter-spacing:2px;color:var(--cr);font-weight:700;margin-bottom:18px;padding:5px 14px;background:rgba(196,18,48,.06);border-radius:100px;border:1px solid rgba(196,18,48,.12)}
+.sr-prompt{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--t1);line-height:1.5;margin-bottom:14px}
+.sr-ctx{font-size:15px;color:var(--t2);line-height:2;margin-bottom:28px;padding-left:14px;border-left:2px solid #2a2a42}
+.ch-choices{display:flex;flex-direction:column;gap:10px}
+.ch-btn{display:block;width:100%;text-align:left;padding:16px 20px;background:var(--b1);border:1px solid #1e1e32;border-radius:var(--rd);cursor:pointer;transition:all .3s;position:relative}
+.ch-btn:hover:not(.locked){border-color:var(--cr);background:rgba(196,18,48,.04);transform:translateX(3px)}
+.ch-btn.locked{cursor:default;opacity:.5;pointer-events:none}
+.ch-btn.picked{border-color:var(--cr);background:rgba(196,18,48,.07);cursor:default}
+.ch-lbl{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:3px}
+.ch-desc{font-size:12px;color:var(--t3);line-height:1.5}
+.ch-fb{margin-top:14px;padding:18px 20px;border-radius:var(--rd);display:none;line-height:1.8;font-size:13px}
+.ch-fb.show{display:block;animation:slideUp .35s var(--ease)}
+.ch-fb.good{background:rgba(22,163,74,.05);border:1px solid rgba(22,163,74,.12);color:#86efac}
+.ch-fb.bad{background:rgba(196,18,48,.05);border:1px solid rgba(196,18,48,.1);color:#fca5a5}
+.ch-fb.mid{background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.1);color:#fde68a}
+.dg-next-wrap{text-align:center;margin-top:18px}
+.dg-next{display:none;padding:11px 32px;background:var(--b2);color:var(--t1);border:1px solid #2a2a42;border-radius:100px;font-size:13px;cursor:pointer;font-weight:600;transition:all .3s}
+.dg-next.show{display:inline-block}
+.dg-next:hover{border-color:var(--cr);color:var(--cr)}
+.dg-prog{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:40px;font-family:monospace;font-size:11px;color:var(--t3)}
+.dgp-bar{width:180px;height:2px;background:#1e1e32;border-radius:2px;overflow:hidden}
+.dgp-fill{height:100%;background:var(--cr);border-radius:2px;transition:width .5s var(--ease)}
+.result-box{max-width:560px;margin:40px auto 0;text-align小熊:center;padding:40px 28px;background:var(--b2);border:var(--br);border-radius:var(--rd3);display:none}
+.result-box.show{display:block;animation:slideUp .5s var(--ease)}
+.rb-emoji{font-size:48px;margin-bottom:12px}
+.rb-title{font-family:var(--serif);font-size:22px;font-weight:900;color:var(--t1);margin-bottom:8px}
+.rb-desc{font-size:14px;color:var(--t2);line-height:1.8}
+
+/* ═══════════════ TIMELINE ═══════════════ */
+#timeline{padding:100px 20px 120px;background:var(--bd);position:relative}
+.tl-hd{text-align:center;max-width:700px;margin:0 auto 64px}
+.tl-hd h2{font-family:var(--serif);font-size:clamp(26px,4vw,40px);font-weight:900;color:var(--t1);margin-bottom:10px}
+.tl-hd p{font-size:15px;color:var(--t3);line-height:1.7}
+.tl-bar{max-width:720px;margin:0 auto;position:relative;padding-left:36px}
+.tl-bar::before{content:'';position:absolute;left:13px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--cr),#1e1e32,transparent)}
+.tl-item{position:relative;padding-bottom:42px;opacity:0;transform:translateX(-16px);transition:all .6s var(--ease)}
+.tl-item.vis{opacity:1;transform:translateX(0)}
+.tl-dot{position:absolute;left:-30px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--b0);border:2px solid var(--cr);z-index:1;transition:all .3s}
+.tl-item:hover .tl-dot{box-shadow:0 0 10px rgba(196,18,48,.35);transform:scale(1.15)}
+.tl-date{font-family:monospace;font-size:12px;font-weight:700;color:var(--cr);margin-bottom:6px}
+.tl-t{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--t1);margin-bottom:6px;line-height:1.4}
+.tl-d{font-size:14px;color:var(--t2);line-height:1.8}
+
+/* ═══════════════ CREDITS ═══════════════ */
+#credits{padding:100px 20px 120px;background:var(--b0);text-align:center;position:relative}
+#credits::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(196,18,48,.05),transparent 60%)}
+.cr-inner{max-width:660px;margin:0 auto;position:relative;z-index:1}
+.cr-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px}
+.cr-h2{font-family:var(--serif);font-size:clamp(24px,3.5vw,36px);font-weight:900;color:var(--t1);margin-bottom:10px}
+.cr-sub{font-size:15px;color:var(--t3);margin-bottom:44px;line-height:1.7}
+.team-g{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:680px;margin:0 auto 36px}
+@media(max-width:640px){.team-g{grid-template-columns:repeat(2,1fr);max-width:360px}}
+@media(max-width:400px){.team-g{grid-template-columns:1fr;max-width:220px}}
+.mcard{background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:22px 18px;text-align:center;transition:all .3s}
+.mcard:hover{border-color:#2a2a42;transform:translateY(-2px)}
+.mc-name{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--t1);margin-bottom:3px}
+.mc-role{font-size:12px;color:var(--t3)}
+.cr-note{font-size:12px;color:#4a4a4a;max-width:520px;margin:0 auto 28px;line-height:1.8}
+.cr-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.cr-link{padding:11px 24px;background:var(--b2);border:var(--br);border-radius:100px;color:var(--t1);text-decoration:none;font-size:13px;font-weight:600;transition:all .3s}
+.cr-link:hover{border-color:var(--cr);color:var(--cr);background:rgba(196,18,48,.05)}
+.cr-link.cta{background:linear-gradient(135deg,var(--cr),var(--cr-dim));border-color:transparent;color:#fff}
+.cr-link.cta:hover{box-shadow:0 4px 20px rgba(196,18,48,.35)}
+
+/* ═══════════════ PROGRESS RAIL ═══════════════ */
+.rail{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:9999;display:flex;flex-direction:column;gap:10px;align-items:center}
+.r-dot{width:9px;height:9px;border-radius:50%;background:#1e1e32;cursor:pointer;transition:all .4s;position:relative}
+.r-dot.on{background:var(--cr);box-shadow:0 0 10px rgba(196,18,48,.35);transform:scale(1.25)}
+.r-dot:hover:not(.on){background:#38384a;transform:scale(1.1)}
+.r-tt{position:absolute;right:18px;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:10px;color:var(--t3);background:var(--b2);padding:4px 10px;border-radius:6px;border:var(--br);opacity:0;pointer-events:none;transition:opacity .3s;font-family:monospace}
+.r-dot:hover .r-tt{opacity:1}
+@media(max-width:768px){.rail{display:none}}
+
+/* ========== DEFINITION SECTION ========== */
+#definition{padding:100px 20px 80px;background:var(--bd);position:relative;overflow:hidden}
+#definition::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 30% 40%,rgba(196,18,48,.04),transparent 60%),radial-gradient(ellipse 50% 50% at 80% 70%,rgba(59,130,246,.03),transparent 60%)}
+.def-inner{max-width:900px;margin:0 auto;position:relative;z-index:1}
+.def-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px;text-align:center}
+.def-title{font-family:var(--serif);font-size:clamp(28px,4.5vw,46px);font-weight:900;color:var(--t1);text-align:center;line-height:1.15;margin-bottom:16px}
+.def-sub{font-size:16px;color:var(--t3);text-align:center;max-width:620px;margin:0 auto 48px;line-height:1.8}
+.def-explain{background:linear-gradient(160deg,var(--b2),var(--b1));border:1px solid #1e1e32;border-radius:var(--rd3);padding:36px 32px;margin-bottom:36px;position:relative;overflow:hidden}
+.def-explain::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(to bottom,var(--cr),var(--cr-dim),transparent)}
+.def-explain h3{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--t1);margin-bottom:14px}
+.def-explain p{font-size:15px;color:var(--t2);line-height:2;margin-bottom:10px}
+.def-explain strong{color:var(--cr);font-weight:600}
+.def-keywords{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.def-kw{padding:6px 16px;background:rgba(196,18,48,.06);border:1px solid rgba(196,18,48,.12);border-radius:100px;font-size:12px;color:var(--cr);font-weight:600}
+.def-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px}
+@media(max-width:760px){.def-flow{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.def-flow{grid-template-columns:1fr}}
+.df-step{background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:22px 18px;text-align:center;position:relative;transition:all .4s}
+.df-step:hover{border-color:#2a2a42;transform:translateY(-2px);box-shadow:var(--sh)}
+.df-step::after{content:'';position:absolute;right:-12px;top:50%;width:10px;height:10px;border-top:2px solid #2a2a42;border-right:2px solid #2a2a42;transform:translateY(-50%) rotate(45deg)}
+.df-step:last-child::after{display:none}
+@media(max-width:760px){.df-step:nth-child(2)::after{display:none}}
+@media(max-width:420px){.df-step::after{display:none}}
+.dfs-num{width:36px;height:36px;border-radius:50%;background:rgba(196,18,48,.1);border:1px solid rgba(196,18,48,.2);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--cr);margin-bottom:12px}
+.dfs-title{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px}
+.dfs-desc{font-size:12px;color:var(--t2);line-height:1.6}
+.def-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:800px){.def-grid{grid-template-columns:1fr;max-width:400px;margin:0 auto}}
+.dg-item{background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:24px;transition:all .4s;text-align:center}
+.dg-item:hover{border-color:#2a2a42;transform:translateY(-3px);box-shadow:var(--sh)}
+.dgi-ico{font-size:32px;margin-bottom:12px}
+.dgi-title{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:8px}
+.dgi-desc{font-size:13px;color:var(--t2);line-height:1.7}
+
+/* ========== TYPOLOGY SECTION ========== */
+#typology{padding:100px 20px 120px;background:var(--b0);position:relative;overflow:hidden}
+#typology::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 40% at 60% 20%,rgba(196,18,48,.05),transparent 70%)}
+.typo-inner{max-width:1000px;margin:0 auto;position:relative;z-index:1}
+.typo-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px;text-align:center}
+.typo-title{font-family:var(--serif);font-size:clamp(26px,4vw,40px);font-weight:900;color:var(--t1);text-align:center;line-height:1.15;margin-bottom:14px}
+.typo-desc{font-size:15px;color:var(--t3);text-align:center;max-width:600px;margin:0 auto 52px;line-height:1.8}
+.typo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:860px){.typo-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.typo-grid{grid-template-columns:1fr;max-width:360px;margin:0 auto}}
+.typo-card{background:linear-gradient(160deg,var(--b2),var(--b1));border:1px solid #1e1e30;border-radius:var(--rd3);padding:28px 22px;position:relative;overflow:hidden;transition:all .45s var(--ease);cursor:default}
+.typo-card:hover{border-color:rgba(196,18,48,.25);transform:translateY(-4px);box-shadow:0 0 30px rgba(196,18,48,.08),var(--sh)}
+.typo-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cr),var(--cr-dim),transparent);opacity:.5}
+.tc-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.tc-ico{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;background:rgba(196,18,48,.06);border:1px solid rgba(196,18,48,.1);flex-shrink:0}
+.tc-name{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--t1)}
+.tc-body{font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:14px}
+.tc-stat{display:inline-block;padding:5px 14px;background:rgba(196,18,48,.06);border-radius:100px;font-size:11px;color:var(--cr);font-weight:700;font-family:monospace}
+.tc-risk{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #1a1a2c}
+.tc-risk-bar{flex:1;height:4px;background:#1e1e32;border-radius:2px;overflow:hidden}
+.tc-risk-fill{height:100%;border-radius:2px;transition:width 1s var(--ease)}
+.tc-risk-label{font-size:10px;color:var(--t3);white-space:nowrap}
+
+/* ========== PSYCHOLOGY SECTION ========== */
+#psychology{padding:100px 20px 120px;background:var(--bd);position:relative}
+.psych-inner{max-width:800px;margin:0 auto;position:relative;z-index:1}
+.psych-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px;text-align:center}
+.psych-title{font-family:var(--serif);font-size:clamp(26px,4vw,40px);font-weight:900;color:var(--t1);text-align:center;line-height:1.15;margin-bottom:14px}
+.psych-sub{font-size:15px;color:var(--t3);text-align:center;max-width:580px;margin:0 auto 52px;line-height:1.8}
+.psych-quote-card{background:linear-gradient(160deg,rgba(196,18,48,.04),transparent);border:1px solid rgba(196,18,48,.08);border-radius:var(--rd3);padding:36px 32px;margin-bottom:36px;position:relative}
+.psych-quote-card::before{content:'\201C';position:absolute;top:16px;left:24px;font-family:var(--serif);font-size:80px;color:rgba(196,18,48,.08);line-height:1;pointer-events:none}
+.psych-quote-text{font-family:var(--serif);font-size:18px;color:var(--t1);line-height:1.9;font-style:italic;margin-bottom:12px;position:relative;z-index:1}
+.psych-quote-src{font-size:12px;color:var(--t3)}
+.psych-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px}
+@media(max-width:700px){.psych-stats-row{grid-template-columns:1fr;max-width:360px;margin-left:auto;margin-right:auto}}
+.ps-item{background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:22px;text-align:center;transition:all .4s}
+.ps-item:hover{border-color:#2a2a42;transform:translateY(-2px)}
+.ps-num{font-family:var(--serif);font-size:clamp(32px,5vw,44px);font-weight:900;color:var(--cr);line-height:1.1}
+.ps-unit{font-size:14px;color:var(--t2);margin-top:4px}
+.ps-note{font-size:11px;color:var(--t3);margin-top:6px}
+.psych-impact-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:600px){.psych-impact-grid{grid-template-columns:1fr}}
+.pi-card{background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:24px;display:flex;gap:16px;align-items:flex-start;transition:all .4s}
+.pi-card:hover{border-color:#2a2a42;transform:translateX(3px)}
+.pi-emoji{font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:rgba(196,18,48,.05);border-radius:12px;flex-shrink:0}
+.pi-hd{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:4px}
+.pi-txt{font-size:13px;color:var(--t2);line-height:1.7}
+
+/* ========== CASE STUDIES SECTION ========== */
+#cases{padding:100px 20px 120px;background:var(--b0);position:relative;overflow:hidden}
+#cases::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 70% 30%,rgba(196,18,48,.04),transparent 60%)}
+.case-inner{max-width:860px;margin:0 auto;position:relative;z-index:1}
+.case-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px;text-align:center}
+.case-title{font-family:var(--serif);font-size:clamp(26px,4vw,40px);font-weight:900;color:var(--t1);text-align:center;line-height:1.15;margin-bottom:14px}
+.case-desc{font-size:15px;color:var(--t3);text-align:center;max-width:580px;margin:0 auto 52px;line-height:1.8}
+.case-card{border:1px solid #1e1e30;border-radius:var(--rd3);overflow:hidden;margin-bottom:28px;transition:all .4s;background:var(--b2)}
+.case-card:hover{border-color:#2a2a42;box-shadow:var(--sh)}
+.case-header{display:flex;align-items:center;justify-content:space-between;padding:22px 28px;border-bottom:1px solid #1a1a2c;gap:12px;flex-wrap:wrap}
+.case-h-left{display:flex;align-items:center;gap:12px}
+.case-h-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(196,18,48,.08);border:1px solid rgba(196,18,48,.15)}
+.case-h-name{font-size:15px;font-weight:700;color:var(--t1)}
+.case-h-loc{font-size:11px;color:var(--t3)}
+.case-tags{display:flex;gap:6px;flex-wrap:wrap}
+.case-tag{padding:4px 12px;border-radius:100px;font-size:10px;letter-spacing:1px;border:1px solid #1e1e32;color:var(--t3)}
+.case-body{padding:28px}
+.case-narr{font-size:15px;color:var(--t2);line-height:2;margin-bottom:22px}
+.case-timeline{display:flex;flex-direction:column;gap:16px;padding-left:20px;border-left:2px solid #1e1e32;margin-bottom:22px}
+.case-tl-item{position:relative;padding-left:20px}
+.case-tl-item::before{content:'';position:absolute;left:-27px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--cr);border:2px solid var(--b0)}
+.case-tl-date{font-family:monospace;font-size:11px;font-weight:700;color:var(--cr);margin-bottom:3px}
+.case-tl-text{font-size:14px;color:var(--t2);line-height:1.7}
+.case-impact{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:500px){.case-impact{grid-template-columns:1fr}}
+.ci-stat{background:rgba(196,18,48,.04);border-radius:var(--rd);padding:14px;text-align:center}
+.ci-val{font-family:var(--serif);font-size:22px;font-weight:900;color:var(--cr)}
+.ci-lbl{font-size:11px;color:var(--t3);margin-top:2px}
+
+/* ========== ACTION GUIDE SECTION ========== */
+#action{padding:100px 20px 120px;background:var(--bd);position:relative}
+.act-inner{max-width:760px;margin:0 auto;position:relative;z-index:1}
+.act-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px;text-align:center}
+.act-title{font-family:var(--serif);font-size:clamp(26px,4vw,40px);font-weight:900;color:var(--t1);text-align:center;line-height:1.15;margin-bottom:14px}
+.act-sub{font-size:15px;color:var(--t3);text-align:center;max-width:580px;margin:0 auto 52px;line-height:1.8}
+.act-steps{display:flex;flex-direction:column;gap:20px}
+.act-step{display:flex;gap:18px;background:linear-gradient(160deg,var(--b2),var(--b1));border:1px solid #1e1e30;border-radius:var(--rd3);padding:26px 28px;transition:all .4s;align-items:flex-start}
+.act-step:hover{border-color:rgba(196,18,48,.2);transform:translateX(4px);box-shadow:var(--sh)}
+.as-num{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,rgba(196,18,48,.15),rgba(196,18,48,.04));border:2px solid rgba(196,18,48,.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--cr);flex-shrink:0}
+.as-content{flex:1}
+.as-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:6px}
+.as-desc{font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:8px}
+.as-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--cr);text-decoration:none;font-weight:600;padding:5px 14px;border:1px solid rgba(196,18,48,.15);border-radius:100px;transition:all .3s}
+.as-link:hover{background:rgba(196,18,48,.08);border-color:var(--cr)}
+.act-resources{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:40px}
+@media(max-width:560px){.act-resources{grid-template-columns:1fr}}
+.ar-card{background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:22px;text-align:center;transition:all .4s;text-decoration:none;display:block}
+.ar-card:hover{border-color:var(--cr);transform:translateY(-3px);box-shadow:0 0 24px rgba(196,18,48,.08)}
+.ar-ico{font-size:28px;margin-bottom:8px}
+.ar-name{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:4px}
+.ar-desc{font-size:11px;color:var(--t3);line-height:1.6}
+
+/* ========== FINALE SECTION ========== */
+#finale{padding:120px 20px 140px;background:var(--b0);position:relative;overflow:hidden}
+#finale::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 20%,rgba(196,18,48,.06),transparent 50%),radial-gradient(ellipse at 30% 80%,rgba(59,130,246,.03),transparent 50%)}
+.fin-inner{max-width:680px;margin:0 auto;text-align:center;position:relative;z-index:1}
+.fin-emoji{font-size:56px;margin-bottom:20px}
+.fin-title{font-family:var(--serif);font-size:clamp(24px,3.5vw,36px);font-weight:900;color:var(--t1);line-height:1.3;margin-bottom:20px}
+.fin-body{font-size:16px;color:var(--t2);line-height:2.1;margin-bottom:32px}
+.fin-body em{color:var(--cr);font-style:normal;font-weight:600}
+.fin-divider{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--cr),transparent);margin:32px auto}
+.fin-quote{font-family:var(--serif);font-size:20px;color:var(--t1);line-height:1.8;font-style:italic;margin-bottom:8px}
+.fin-sig{font-size:13px;color:var(--t3)}
+.fin-cta{margin-top:44px;display:inline-flex;align-items:center;gap:8px;padding:16px 38px;background:linear-gradient(135deg,var(--cr),var(--cr-dim));color:#fff;border-radius:100px;text-decoration:none;font-size:15px;font-weight:700;letter-spacing:1px;transition:all .4s;box-shadow:0 4px 24px rgba(196,18,48,.2)}
+.fin-cta:hover{transform:translateY(-3px);box-shadow:0 8px 36px rgba(196,18,48,.35)}
+
+/* ========== GAME: 外卖被诬陷 ========== */
+#keyboard-judge{padding:80px 20px 100px;background:var(--bd);position:relative;overflow:hidden;transition:filter .8s,background .8s}
+#keyboard-judge::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 30%,rgba(196,18,48,.04),transparent 60%),radial-gradient(ellipse 60% 50% at 30% 80%,rgba(59,130,246,.03),transparent 60%);pointer-events:none}
+.game-inner{max-width:640px;margin:0 auto;position:relative;z-index:1}
+.game-badge{font-size:10px;letter-spacing:5px;color:var(--cr);font-weight:700;margin-bottom:14px;text-align:center}
+.game-title{font-family:var(--serif);font-size:clamp(26px,4vw,40px);font-weight:900;color:var(--t1);text-align:center;line-height:1.15;margin-bottom:10px}
+.game-sub{font-size:15px;color:var(--t3);text-align:center;max-width:560px;margin:0 auto 28px;line-height:1.8}
+.game-warn{text-align:center;font-size:13px;color:var(--cr);margin-bottom:28px;padding:10px 20px;border:1px dashed rgba(196,18,48,.3);border-radius:100px;display:inline-block;margin-left:auto;margin-right:auto;width:fit-content}
+
+/* Health Bar */
+.game-hud{display:flex;align-items:center;gap:14px;margin-bottom:20px;background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:14px 22px}
+.game-hud-icon{font-size:24px;flex-shrink:0}
+.game-hud-label{font-size:12px;color:var(--t3);white-space:nowrap}
+.game-health-track{flex:1;height:10px;background:#1e1e32;border-radius:5px;overflow:hidden}
+.game-health-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#22c55e,#4ade80,#eab308,#ef4444);transition:width .6s var(--ease)}
+.game-health-pct{font-family:monospace;font-size:15px;font-weight:700;color:var(--t1);min-width:46px;text-align:right}
+
+/* Chat Window */
+.game-chat-wrap{background:var(--b2);border:var(--br);border-radius:var(--rd3);overflow:hidden;margin-bottom:20px}
+.game-chat-header{display:flex;align-items:center;gap:10px;padding:15px 20px;background:#111122;border-bottom:1px solid #1e1e30}
+.game-chat-group-name{font-size:14px;font-weight:700;color:var(--t1)}
+.game-chat-group-meta{font-size:11px;color:var(--t3);margin-left:auto}
+.game-chat-body{padding:20px;max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.game-chat-body::-webkit-scrollbar{width:4px}
+.game-chat-body::-webkit-scrollbar-thumb{background:#2a2a42;border-radius:2px}
+
+/* Chat Bubbles */
+.chat-msg{display:flex;flex-direction:column;max-width:82%;animation:msgIn .4s var(--ease)}
+.chat-msg.incoming{align-self:flex-start}
+.chat-msg.player{align-self:flex-end}
+.chat-msg.system{align-self:center;max-width:90%;text-align:center}
+.chat-msg.support{align-self:flex-start}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg-sender{font-size:10px;color:var(--t3);margin-bottom:3px;padding:0 4px}
+.chat-msg.incoming .chat-msg-sender{text-align:left}
+.chat-msg.player .chat-msg-sender{text-align:right}
+.chat-bubble{padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.7;word-break:break-word}
+.chat-msg.incoming .chat-bubble{background:#1e1e30;color:var(--t2);border-bottom-left-radius:4px}
+.chat-msg.player .chat-bubble{background:linear-gradient(135deg,var(--cr),var(--cr-dim));color:#fff;border-bottom-right-radius:4px}
+.chat-msg.system .chat-bubble{background:transparent;color:var(--t3);font-size:12px;padding:4px 10px;border-radius:8px}
+.chat-msg.support .chat-bubble{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.15);color:var(--t2);font-size:13px;border-bottom-left-radius:4px}
+
+/* Choice Buttons */
+.game-choice-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:600px){.game-choice-row{grid-template-columns:1fr}}
+.game-choice{width:100%;padding:14px 12px;background:var(--b2);border:1px solid #1e1e32;border-radius:var(--rd);color:var(--t1);font-size:13px;text-align:center;cursor:pointer;transition:all .25s;font-family:inherit;line-height:1.5;display:flex;flex-direction:column;align-items:center;gap:4px}
+.game-choice:hover:not(:disabled){border-color:rgba(196,18,48,.3);background:#151528;transform:translateY(-2px)}
+.game-choice:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.game-choice .gc-emoji{font-size:20px}
+.game-choice .gc-label{font-weight:700;font-size:14px}
+.game-choice .gc-hint{font-size:10px;color:var(--t3)}
+.game-choice.primary{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.04)}
+.game-choice.primary:hover:not(:disabled){border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.08)}
+
+/* Feedback toast */
+.game-feedback{text-align:center;font-size:12px;color:var(--t3);margin-bottom:12px;min-height:18px;transition:color .3s}
+.game-feedback.red{color:var(--cr)}
+.game-feedback.green{color:#22c55e}
+.game-feedback.yellow{color:#eab308}
+
+/* Game Over Panel */
+.game-over-panel{text-align:center;margin-top:24px;display:none}
+.game-over-panel.show{display:block}
+.game-over-emoji{font-size:48px;margin-bottom:12px}
+.game-over-msg{font-family:var(--serif);font-size:20px;font-weight:900;color:var(--t1);margin-bottom:10px}
+.game-over-detail{font-size:14px;color:var(--t2);line-height:1.9;margin-bottom:10px}
+.game-over-detail strong{color:var(--cr)}
+.game-over-quote{font-size:16px;color:var(--t1);font-family:var(--serif);line-height:1.8;margin:16px 0;padding:14px 20px;background:rgba(196,18,48,.04);border-radius:var(--rd);border-left:3px solid var(--cr)}
+.game-restart{display:inline-flex;align-items:center;gap:6px;padding:12px 28px;background:var(--b2);border:1px solid #1e1e32;border-radius:100px;color:var(--t1);font-size:14px;cursor:pointer;transition:all .3s;font-family:inherit;margin-top:8px}
+.game-restart:hover{border-color:var(--cr);color:var(--cr)}
+
+/* Start button */
+.game-start-wrap{text-align:center;margin-bottom:32px}
+.game-start-btn{display:inline-flex;align-items:center;gap:8px;padding:18px 44px;background:linear-gradient(135deg,var(--cr),var(--cr-dim));color:#fff;border:none;border-radius:100px;font-size:17px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .4s;font-family:inherit;box-shadow:0 4px 24px rgba(196,18,48,.2)}
+.game-start-btn:hover{transform:translateY(-3px);box-shadow:0 8px 36px rgba(196,18,48,.35)}
+.game-start-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* Darkening effect when HP < 40 */
+#keyboard-judge.darkened{filter:brightness(.55) saturate(.4)}
+#keyboard-judge.darkened::after{content:'';position:absolute;inset:0;background:rgba(5,5,20,.45);pointer-events:none;z-index:0}
+#keyboard-judge.darkened .game-inner{filter:none}
+
+/* Team at bottom */
+#team-bottom{padding:80px 20px 100px;background:var(--bd);text-align:center;position:relative}
+#team-bottom::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(196,18,48,.03),transparent 70%)}
+.team-btm-inner{max-width:600px;margin:0 auto;position:relative;z-index:1}
+.team-btm-divider{width:40px;height:2px;background:linear-gradient(90deg,transparent,var(--cr),transparent);margin:0 auto 28px}
+.team-btm-title{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--t1);margin-bottom:8px}
+.team-btm-sub{font-size:13px;color:var(--t3);margin-bottom:32px}
+.team-btm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:600px){.team-btm-cards{grid-template-columns:repeat(2,1fr)}}
+.team-btm-card{background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:20px 14px;transition:all .4s}
+.team-btm-card:hover{border-color:#2a2a42;transform:translateY(-2px);box-shadow:var(--sh)}
+.team-btm-name{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--t1);margin-bottom:4px}
+.team-btm-role{font-size:12px;color:var(--t3)}
+
+
+#team-bottom{padding:80px 20px 100px;background:var(--bd);text-align:center;position:relative}
+#team-bottom::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(196,18,48,.03),transparent 70%)}
+.team-btm-inner{max-width:600px;margin:0 auto;position:relative;z-index:1}
+.team-btm-divider{width:40px;height:2px;background:linear-gradient(90deg,transparent,var(--cr),transparent);margin:0 auto 28px}
+.team-btm-title{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--t1);margin-bottom:8px}
+.team-btm-sub{font-size:13px;color:var(--t3);margin-bottom:32px}
+.team-btm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:600px){.team-btm-cards{grid-template-columns:repeat(2,1fr)}}
+.team-btm-card{background:var(--b2);border:var(--br);border-radius:var(--rd2);padding:20px 14px;transition:all .4s}
+.team-btm-card:hover{border-color:#2a2a42;transform:translateY(-2px);box-shadow:var(--sh)}
+.team-btm-name{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--t1);margin-bottom:4px}
+.team-btm-role{font-size:12px;color:var(--t3)}
+
+</style>
+</head>
+<body>
+
+<!-- Atmosphere overlay -->
+<div class="scanlines"></div>
+
+<!-- ═══════════ CINEMATIC INTRO ═══════════ -->
+<div id="intro">
+  <div class="phone-box" id="phoneBox">
+    <div class="phone-notch"></div>
+    <div class="phone-inner">
+      <div class="ph-status"><span>21:47</span><span>📶 📡 🔋 67%</span></div>
+      <div class="ph-notifs" id="phNotifs"></div>
+    </div>
+  </div>
+  <div class="cine-overlay" id="cineOverlay"></div>
+  <div class="cine-hint" id="cineHint">
+    <span>向下滚动 · 开始探索</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+  </div>
+</div>
+
+
+<!-- ========== WHAT IS ONLINE TOILET ========== -->
+<section id="definition">
+  <div class="def-inner">
+    <div class="def-badge">首先，了解问题 &middot; WHAT IS THIS</div>
+    <h2 class="def-title">什么是「网络厕所」？</h2>
+    <p class="def-sub">一个听起来荒谬的名字，一种真实的数字暴力形态。它不是个案，而是一个正在生长的生态系统。</p>
+
+    <div class="def-explain">
+      <h3>「厕所」&mdash;&mdash; 匿名投稿的集散地</h3>
+      <p>「网络厕所」，也称「厕所号」，是指在微博、QQ、小红书等社交平台上，由个人或小团体运营的<strong>匿名投稿账号</strong>。运营者接收匿名用户的投稿，内容多为对他人的负面评价、嘲讽、辱骂，甚至是未经允许的照片和个人信息。投稿一经发布，运营者不审核、不负责、不露面&mdash;&mdash;一个<strong>「三不」</strong>的暴力机器就此启动。</p>
+      <p>为什么叫「厕所」？因为它们被当作<strong>「什么都可以往里倒」</strong>的地方。像公共厕所一样，任何人都可以匿名「使用」，用完就走，不需要对留下的东西负责。这个名字本身就暗含着一种对暴力的正常化：<strong>仿佛在这里，任何话都可以说，任何伤害都可以做。</strong></p>
+      <div class="def-keywords">
+        <span class="def-kw">匿名投稿</span><span class="def-kw">无审核发布</span><span class="def-kw">公开羞辱</span><span class="def-kw">算法加速</span><span class="def-kw">跨平台扩散</span><span class="def-kw">运营者隐身</span>
+      </div>
+    </div>
+
+    <h3 style="text-align:center;font-family:var(--serif);color:var(--t1);margin-bottom:28px;font-size:18px;">一条「挂厕」帖的生命周期</h3>
+    <div class="def-flow">
+      <div class="df-step"><div class="dfs-num">1</div><div class="dfs-title">匿名投递</div><div class="dfs-desc">用户通过私信匿名投稿，内容无需任何审核</div></div>
+      <div class="df-step"><div class="dfs-num">2</div><div class="dfs-title">三不发布</div><div class="dfs-desc">运营者不审核、不负责、不露面，直接发布</div></div>
+      <div class="df-step"><div class="dfs-num">3</div><div class="dfs-title">算法引爆</div><div class="dfs-desc">争议性内容互动率3-8倍，算法优先推荐</div></div>
+      <div class="df-step"><div class="dfs-num">4</div><div class="dfs-title">跨平台扩散</div><div class="dfs-desc">平均4.2小时内被转发至3个以上平台</div></div>
+    </div>
+
+    <div class="def-grid">
+      <div class="dg-item">
+        <div class="dgi-ico">&#x1f512;</div>
+        <div class="dgi-title">身份不对等</div>
+        <div class="dgi-desc">施暴者匿名，受害者公开。你在明处，他们在暗处。你连反击的对象都找不到。</div>
+      </div>
+      <div class="dg-item">
+        <div class="dgi-ico">&#x1f517;</div>
+        <div class="dgi-title">链条式伤害</div>
+        <div class="dgi-desc">从投稿到发布到评论到转发到人肉&mdash;&mdash;每一步都让伤害不可逆转地扩大。</div>
+      </div>
+      <div class="dg-item">
+        <div class="dgi-ico">&#x26a1;</div>
+        <div class="dgi-title">技术与人的共谋</div>
+        <div class="dgi-desc">算法追求「互动」而非「健康」。愤怒比善良更容易传播&mdash;&mdash;机器不懂，但它正在训练我们。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════ PROGRESS RAIL ═══════════ -->
+<div class="rail" id="rail"></div>
+
+<!-- ═══════════ BRANCH SELECT ═══════════ -->
+<section id="branch">
+  <div class="bs-badge">CHAPTER 01 · 选择视角</div>
+  <h1 class="bs-h1">你将以谁的视角<br>走进这个故事？</h1>
+  <p class="bs-sub">三种视角，三条路径。你的选择会改变你看到的数据、你听到的声音、你要做的决定。</p>
+  <div class="bgrid">
+    <div class="bcard" data-b="victim" onclick="pickBranch(this)">
+      <div class="bc-ico">🎯</div>
+      <h3>被挂者</h3>
+      <p>你是那个被匿名投稿、被万人围观的人。你的世界在一夜之间坍塌。</p>
+      <span class="btag">受害者视角</span>
+    </div>
+    <div class="bcard" data-b="bystander" onclick="pickBranch(this)">
+      <div class="bc-ico">👁</div>
+      <h3>旁观者</h3>
+      <p>你刷到了那条"挂厕"帖。你划走了？还是停下看了？你的每一次停留都有后果。</p>
+      <span class="btag">旁观者视角</span>
+    </div>
+    <div class="bcard" data-b="submitter" onclick="pickBranch(this)">
+      <div class="bc-ico">✍</div>
+      <h3>投稿者</h3>
+      <p>你按下"匿名投稿"。你觉得自己只是在吐槽。但数据会告诉你故事的另一面。</p>
+      <span class="btag">投稿者视角</span>
+    </div>
+  </div>
+  <button id="bsConfirm" disabled onclick="confirmBranch()">确认视角 →</button>
+</section>
+
+<!-- ═══════════ NARRATIVE ENGINE ═══════════ -->
+<section id="narrative">
+  <div class="narr-bg-word" style="top:6%;right:-4%;">匿名的</div>
+  <div class="narr-bg-word" style="bottom:4%;left:-6%;">伤害</div>
+  <div id="narrContent" class="narr-inner"></div>
+</section>
+
+<!-- ═══════════ INTERACTIVE CARD STACK ═══════════ -->
+<section id="hscroll-wrap">
+  <div class="hs-inner">
+    <div class="hs-badge">沉浸体验 · WALK IN THEIR SHOES</div>
+    <h2 class="hs-heading" id="hsHeading">走进这条故事线</h2>
+    <p class="hs-sub" id="hsSub">点击左右按钮，一步步走完这段旅程。每一页都有属于你的数据。</p>
+    <div class="hs-stage" id="hsStage">
+      <div class="hs-card active" data-hsidx="0">
+        <div class="hs-step">选择视角 · 开始旅程</div>
+        <h3 class="hs-title">请先在上方选择一个视角</h3>
+        <p class="hs-body">选择「被挂者」「旁观者」或「投稿者」后，你将进入对应的互动故事线。每一步都会揭示不同的数据与真相。</p>
+        <div class="hs-data"><div class="hs-data-num">3</div><div class="hs-data-label">种视角可选 · 选择后解锁完整内容</div></div>
+      </div>
+    </div>
+    <div class="hs-controls">
+      <button class="hs-btn" id="hsPrev" title="上一步">◀</button>
+      <div class="hs-dots" id="hsDots"></div>
+      <span class="hs-counter" id="hsCounter">1 / 5</span>
+      <button class="hs-btn" id="hsNext" title="下一步">▶</button>
+    </div>
+    <div class="hs-hint">键盘 ← → 也可以翻页</div>
+  </div>
+</section>
+
+<!-- ═══════════ DATA CHARTS ═══════════ -->
+<section id="data">
+  <div class="ds-hd">
+    <div class="ds-badge">DATA DEEP DIVE · 数据深潜</div>
+    <h2 class="ds-title">"网络厕所"不是个案。<br>是一场有数据的流行病。</h2>
+    <p class="ds-desc">以下图表基于权威机构公开发布数据或基于公开数据的合理推演。每个数字背后，都是一个真实的伤害故事。</p>
+  </div>
+  <div class="chart-grid">
+    <div class="cc"><div class="cc-hd"><div><h3>网暴相关犯罪定罪人数变化</h3><p>2022—2024年两类罪名判刑趋势</p></div><span class="cc-badge">核心指标</span></div><div class="cc-canvas"><canvas id="ch1"></canvas></div><div class="cc-foot">来源：最高人民法院工作报告 2023-2025</div></div>
+    <div class="cc"><div class="cc-hd"><div><h3>平台专项治理成果</h3><p>"清朗·网络戾气整治"行动处置数据 (2023.11-2024.12)</p></div><span class="cc-badge">治理成效</span></div><div class="cc-canvas"><canvas id="ch2"></canvas></div><div class="cc-foot">来源：微博/快手/B站官方公告</div></div>
+    <div class="cc"><div class="cc-hd"><div><h3>全球网络暴力高风险感知</h3><p>各国受访者自认遭受严重网暴比例 (Statista 2024)</p></div><span class="cc-badge">国际对比</span></div><div class="cc-canvas"><canvas id="ch3"></canvas></div><div class="cc-foot">来源：Statista Global Cyberbullying Survey 2024</div></div>
+    <div class="cc"><div class="cc-hd"><div><h3>网暴案件审理周期分布</h3><p>从立案到一审判决的时间分布</p></div><span class="cc-badge">司法效率</span></div><div class="cc-canvas"><canvas id="ch4"></canvas></div><div class="cc-foot">来源：北京互联网法院白皮书 2024</div></div>
+    <div class="cc"><div class="cc-hd"><div><h3>"网络厕所"类型分布</h3><p>基于主要平台"厕所号"的分类统计</p></div><span class="cc-badge">现象分类</span></div><div class="cc-canvas"><canvas id="ch5"></canvas></div><div class="cc-foot">来源：本团队调研（基于公开可观测样本）</div></div>
+    <div class="cc"><div class="cc-hd"><div><h3>未成年人触网年龄 × 网暴风险</h3><p>触网越早，遭遇网络暴力风险越高</p></div><span class="cc-badge">未成年人</span></div><div class="cc-canvas"><canvas id="ch6"></canvas></div><div class="cc-foot">来源：《青少年蓝皮书》2024 · 中国社科院</div></div>
+    <div class="cc"><div class="cc-hd"><div><h3>民事赔偿金额范围</h3><p>网暴案件法院判决经济赔偿与精神抚慰金范围</p></div><span class="cc-badge">维权成本</span></div><div class="cc-canvas"><canvas id="ch7"></canvas></div><div class="cc-foot">来源：中国裁判文书网案例统计 2023-2025</div></div>
+    <div class="cc chart-full"><div class="cc-hd"><div><h3>单条"挂厕"内容传播速度模拟</h3><p>从发布到72小时的阅读量与评论数增长曲线（基于典型传播模型）</p></div><span class="cc-badge">传播动力学</span></div><div class="cc-canvas"><canvas id="ch8"></canvas></div><div class="cc-foot">来源：基于社交媒体传播模型的合理估算</div></div>
+  </div>
+</section>
+
+<!-- ═══════════ DECISION GAME ═══════════ -->
+<section id="decision">
+  <div class="dg-hd">
+    <h2>如果你是他们<br>你会怎么做？</h2>
+    <p>三个真实场景，三个角色扮演。每个选择都有后果。</p>
+  </div>
+  <div id="dgScenes"></div>
+  <div class="dg-prog"><span id="dgLabel">场景 1 / 3</span><div class="dgp-bar"><div class="dgp-fill" id="dgFill" style="width:33.3%"></div></div></div>
+  <div class="result-box" id="resultBox">
+    <div class="rb-emoji" id="rbEmoji"></div>
+    <div class="rb-title" id="rbTitle"></div>
+    <div class="rb-desc" id="rbDesc"></div>
+    <button class="dg-next show" style="margin-top:20px;" onclick="document.getElementById('timeline').scrollIntoView({behavior:'smooth'})">查看法治进程 ↓</button>
+  </div>
+</section>
+
+<!-- ═══════════ TIMELINE ═══════════ -->
+<section id="timeline">
+  <div class="tl-hd">
+    <h2>法律之剑<br>正在出鞘。</h2>
+    <p>从"指导意见"到专门立法，从平台自律到司法亮剑。</p>
+  </div>
+  <div class="tl-bar">
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-date">2023 年 9 月</div><div class="tl-t">"两高一部"发布《关于依法惩治网络暴力违法犯罪的指导意见》</div><div class="tl-d">首次系统性明确侮辱罪、诽谤罪、侵犯公民个人信息罪的定罪量刑标准，降低维权门槛。</div></div>
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-date">2023 年 11 月</div><div class="tl-t">"清朗·网络戾气整治"专项行动启动</div><div class="tl-d">中央网信办将"网络厕所""开盒挂人"列为首要打击对象。微博关闭97个"厕所号"，快手处置361个。</div></div>
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-date">2024 年 8 月 1 日</div><div class="tl-t">《网络暴力信息治理规定》正式施行</div><div class="tl-d">中国首部反网暴专门部门规章，构建"发现识别—应急处置—用户保护"完整链条。</div></div>
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-date">2025 年 3 月</div><div class="tl-t">最高法工作报告：383名网暴者被判刑</div><div class="tl-d">2024年全年，292人因侵犯公民个人信息罪、91人因侮辱诽谤罪被定罪判刑。</div></div>
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-date">2026 年 3 月</div><div class="tl-t">最高法发布5件网络暴力典型案例</div><div class="tl-d">以案释法，涵盖诽谤、侮辱、侵犯个人信息、敲诈勒索、商业诋毁五种类型。</div></div>
+  </div>
+</section>
+
+<!-- ═══════════ CREDITS ═══════════ -->
+<section id="credits">
+  <div class="cr-inner">
+    <div class="cr-badge">ABOUT THIS WORK</div>
+    <h2 class="cr-h2">关于本作品</h2>
+    <p class="cr-sub">一份关于"网络厕所"现象的交互式数据新闻作品。</p>
+    <p class="cr-note">数据来源：最高人民法院 · CNNIC第55次报告 · 中国社科院《青少年蓝皮书2024》 · Statista · 微博/快手/B站官方公告 · 中国裁判文书网。<br>部分数据为基于权威来源的合理推演与模型估算。<br>本作品仅供教育研究与公益传播使用。</p>
+  </div>
+</section>
+
+
+
+<!-- ========== TYPOLOGY: 厕所的类型学 ========== -->
+<section id="typology">
+  <div class="typo-inner">
+    <div class="typo-badge">CHAPTER 06 &middot; 分门别类</div>
+    <h2 class="typo-title">厕所的类型学</h2>
+    <p class="typo-desc">不是所有的愤怒都是相同的。「网络厕所」根据目标和内容，形成了各自的文化生态。以下是我们基于公开可观测样本的分类。</p>
+    <div class="typo-grid">
+      <div class="typo-card">
+        <div class="tc-head"><div class="tc-ico">&#x1f3eb;</div><div class="tc-name">校园/舍友厕</div></div>
+        <div class="tc-body">以学校、宿舍、班级为核心单位，投稿内容多为对同学的外貌、性格、生活习惯的负面评价。由于投稿者与目标在现实中认识，伤害具有<strong>线下溢出</strong>效应。</div>
+        <span class="tc-stat">占比约 32% &middot; 最常见类型</span>
+        <div class="tc-risk"><span class="tc-risk-label">伤害风险</span><div class="tc-risk-bar"><div class="tc-risk-fill" style="width:95%;background:#c41230"></div></div></div>
+      </div>
+      <div class="typo-card">
+        <div class="tc-head"><div class="tc-ico">&#x1f484;</div><div class="tc-name">容貌/身材厕</div></div>
+        <div class="tc-body">聚焦于外貌羞辱&mdash;&mdash;对身材、长相、穿搭的攻击。大量针对女性群体。常用「P图」「打分」「对比」等方式，将外貌羞辱<strong>游戏化</strong>。</div>
+        <span class="tc-stat">占比约 24% &middot; 外貌羞辱主导</span>
+        <div class="tc-risk"><span class="tc-risk-label">伤害风险</span><div class="tc-risk-bar"><div class="tc-risk-fill" style="width:90%;background:#c41230"></div></div></div>
+      </div>
+      <div class="typo-card">
+        <div class="tc-head"><div class="tc-ico">&#x1f3ad;</div><div class="tc-name">二次元/COS厕</div></div>
+        <div class="tc-body">以亚文化圈层为阵地&mdash;&mdash;COSER、同人创作者、声优爱好者等。因圈层内部认同感强烈，「挂人」往往伴随<strong>圈子排斥</strong>，形成小型猎巫运动。</div>
+        <span class="tc-stat">占比约 18% &middot; 圈层猎巫</span>
+        <div class="tc-risk"><span class="tc-risk-label">伤害风险</span><div class="tc-risk-bar"><div class="tc-risk-fill" style="width:78%;background:#eab308"></div></div></div>
+      </div>
+      <div class="typo-card">
+        <div class="tc-head"><div class="tc-ico">&#x2b50;</div><div class="tc-name">偶像/明星厕</div></div>
+        <div class="tc-body">集中在饭圈文化中，以「脱粉回踩」「黑料整理」「对比拉踩」为主要形式。目标虽然通常是公众人物，但攻击常常<strong>蔓延至粉丝个人</strong>。</div>
+        <span class="tc-stat">占比约 15% &middot; 饭圈延伸</span>
+        <div class="tc-risk"><span class="tc-risk-label">伤害风险</span><div class="tc-risk-bar"><div class="tc-risk-fill" style="width:65%;background:#eab308"></div></div></div>
+      </div>
+      <div class="typo-card">
+        <div class="tc-head"><div class="tc-ico">&#x1f4b8;</div><div class="tc-name">阶层/社会厕</div></div>
+        <div class="tc-body">以经济条件、社会阶层、家庭背景为攻击靶点。充斥着「穷」「土」「底层」等标签。此类内容利用社会焦虑，<strong>制造对立</strong>以获得传播。</div>
+        <span class="tc-stat">占比约 8% &middot; 阶层攻击</span>
+        <div class="tc-risk"><span class="tc-risk-label">伤害风险</span><div class="tc-risk-bar"><div class="tc-risk-fill" style="width:85%;background:#c41230"></div></div></div>
+      </div>
+      <div class="typo-card">
+        <div class="tc-head"><div class="tc-ico">&#x1f300;</div><div class="tc-name">混合/杂糅厕</div></div>
+        <div class="tc-body">不设固定主题，来者不拒&mdash;&mdash;从校园八卦到职场吐槽到邻里纠纷。因为受众广泛且内容多元，此类账号的<strong>运营者商业化倾向</strong>最强。</div>
+        <span class="tc-stat">占比约 3% &middot; 商业化运营</span>
+        <div class="tc-risk"><span class="tc-risk-label">伤害风险</span><div class="tc-risk-bar"><div class="tc-risk-fill" style="width:60%;background:#f97316"></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PSYCHOLOGY: 无声的代价 ========== -->
+<section id="psychology">
+  <div class="psych-inner">
+    <div class="psych-badge">CHAPTER 07 &middot; 心理深潜</div>
+    <h2 class="psych-title">看不见的代价</h2>
+    <p class="psych-sub">身体上的伤口可以看见。网络暴力留下的是另一种&mdash;&mdash;你可能从未在新闻照片里见过它们，但它们同样真实。</p>
+
+    <div class="psych-quote-card">
+      <div class="psych-quote-text">我一直告诉自己「他们只是网上的人，不认识我」。但每天早上打开手机的时候，我的手还是会抖。不是怕看到什么&mdash;&mdash;是怕看不到什么。</div>
+      <div class="psych-quote-src">&mdash;&mdash; 一位22岁的网暴幸存者，在接受心理咨询一年后</div>
+    </div>
+
+    <div class="psych-stats-row">
+      <div class="ps-item"><div class="ps-num">37%</div><div class="ps-unit">曾产生自伤念头</div><div class="ps-note">网暴受害者心理健康调查 &middot; 2024</div></div>
+      <div class="ps-item"><div class="ps-num">5.3&times;</div><div class="ps-unit">抑郁风险倍率</div><div class="ps-note">相比未遭遇网暴的同龄人</div></div>
+      <div class="ps-item"><div class="ps-num">8.7月</div><div class="ps-unit">平均恢复周期</div><div class="ps-note">从创伤出现到心理状态基本稳定</div></div>
+    </div>
+
+    <div class="psych-impact-grid">
+      <div class="pi-card">
+        <div class="pi-emoji">&#x1f630;</div>
+        <div>
+          <div class="pi-hd">持续性焦虑与恐惧</div>
+          <div class="pi-txt">打开任何社交软件都会触发应激反应。手机通知声变成恐惧信号。受害者常常发展出<strong>社交平台恐惧症</strong>&mdash;&mdash;不是矫情，是创伤后的条件反射。</div>
+        </div>
+      </div>
+      <div class="pi-card">
+        <div class="pi-emoji">&#x1fae5;</div>
+        <div>
+          <div class="pi-hd">自我认同瓦解</div>
+          <div class="pi-txt">当数千条评论反复告诉你「你丑」「你恶心」「你不配」，这些声音会<strong>内化</strong>。受害者开始怀疑自己的价值&mdash;&mdash;不是因为他们脆弱，是因为人类的自我认知本就依赖他人的反馈。</div>
+        </div>
+      </div>
+      <div class="pi-card">
+        <div class="pi-emoji">&#x1f507;</div>
+        <div>
+          <div class="pi-hd">社会性退缩</div>
+          <div class="pi-txt">60%的受害者出现社交回避行为。他们不敢在公共场所出现，不敢参加聚会，甚至不敢去学校或公司&mdash;&mdash;因为<strong>「每一双眼睛都可能是看过那条帖子的人」</strong>。</div>
+        </div>
+      </div>
+      <div class="pi-card">
+        <div class="pi-emoji">&#x1f494;</div>
+        <div>
+          <div class="pi-hd">对人际关系的不信任</div>
+          <div class="pi-txt">「连不认识的人都可以这样伤害我，认识的人呢？」网暴摧毁的不仅是一个人的心理健康，还有他们<strong>信任他人的能力</strong>。这种创伤的影响远超单次事件的持续时间。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== CASE STUDIES: 当屏幕熄灭之后 ========== -->
+<section id="cases">
+  <div class="case-inner">
+    <div class="case-badge">CHAPTER 08 &middot; 真实案例</div>
+    <h2 class="case-title">当屏幕熄灭之后</h2>
+    <p class="case-desc">以下案例基于公开报道和裁判文书。为了保护当事人，我们隐去了部分可识别信息&mdash;&mdash;但故事的核心是真实的。</p>
+
+    <div class="case-card">
+      <div class="case-header">
+        <div class="case-h-left">
+          <div class="case-h-avatar">&#x1f393;</div>
+          <div>
+            <div class="case-h-name">大二学生 &middot; L同学</div>
+            <div class="case-h-loc">华中某省 &middot; 2023年</div>
+          </div>
+        </div>
+        <div class="case-tags">
+          <span class="case-tag">校园厕所</span><span class="case-tag">外貌羞辱</span><span class="case-tag">休学</span>
+        </div>
+      </div>
+      <div class="case-body">
+        <div class="case-narr">L同学的一张宿舍自拍被同班同学截图，匿名投稿到一个校园「厕所号」。配文：「这种长相在我们学校排第几？」帖子在24小时内被转发超过800次，评论区出现了针对L同学外貌的系统性辱骂，有人翻出了L同学的社交账号，逐张照片进行「评分」。</div>
+        <div class="case-timeline">
+          <div class="case-tl-item"><div class="case-tl-date">第5天</div><div class="case-tl-text">L同学开始旷课，拒绝离开宿舍</div></div>
+          <div class="case-tl-item"><div class="case-tl-date">第14天</div><div class="case-tl-text">家长接到辅导员电话，赶到学校</div></div>
+          <div class="case-tl-item"><div class="case-tl-date">第30天</div><div class="case-tl-text">L同学办理休学手续，开始接受心理治疗</div></div>
+          <div class="case-tl-item"><div class="case-tl-date">6个月后</div><div class="case-tl-text">在律师协助下，通过法院调查令锁定投稿者身份，达成和解</div></div>
+        </div>
+        <div class="case-impact">
+          <div class="ci-stat"><div class="ci-val">800+</div><div class="ci-lbl">转发量（24小时内）</div></div>
+          <div class="ci-stat"><div class="ci-val">30天</div><div class="ci-lbl">从受害到休学</div></div>
+          <div class="ci-stat"><div class="ci-val">6个月</div><div class="ci-lbl">维权周期</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-card">
+      <div class="case-header">
+        <div class="case-h-left">
+          <div class="case-h-avatar">&#x1f469;&#x200d;&#x1f4bb;</div>
+          <div>
+            <div class="case-h-name">职场新人 &middot; W女士</div>
+            <div class="case-h-loc">华南某市 &middot; 2024年</div>
+          </div>
+        </div>
+        <div class="case-tags">
+          <span class="case-tag">职场厕所</span><span class="case-tag">人肉搜索</span><span class="case-tag">司法维权</span>
+        </div>
+      </div>
+      <div class="case-body">
+        <div class="case-narr">W女士在一次公司会议上与同事发生分歧。当晚，她的工牌照片、手机号和家庭住址被匿名投稿到一个「职场厕所号」。随后数周，她收到了数十条骚扰电话和辱骂短信。最令她恐惧的是一条：「我知道你每天几点下班。」W女士报警后，警方通过IP溯源锁定了投稿者&mdash;&mdash;是她的一位同事。</div>
+        <div class="case-timeline">
+          <div class="case-tl-item"><div class="case-tl-date">第1周</div><div class="case-tl-text">报警并提交电子证据，警方立案</div></div>
+          <div class="case-tl-item"><div class="case-tl-date">第3周</div><div class="case-tl-text">警方锁定投稿者IP，传唤嫌疑人</div></div>
+          <div class="case-tl-item"><div class="case-tl-date">第8周</div><div class="case-tl-text">检察院以侵犯公民个人信息罪提起公诉</div></div>
+          <div class="case-tl-item"><div class="case-tl-date">3个月</div><div class="case-tl-text">判决：有期徒刑8个月，赔偿精神损害抚慰金</div></div>
+        </div>
+        <div class="case-impact">
+          <div class="ci-stat"><div class="ci-val">50+</div><div class="ci-lbl">骚扰电话/短信</div></div>
+          <div class="ci-stat"><div class="ci-val">8个月</div><div class="ci-lbl">最终刑期</div></div>
+          <div class="ci-stat"><div class="ci-val">3个月</div><div class="ci-lbl">从报警到判决</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ACTION GUIDE: 你不再只是旁观者 ========== -->
+<section id="action">
+  <div class="act-inner">
+    <div class="act-badge">CHAPTER 09 &middot; 行动指南</div>
+    <h2 class="act-title">你不再只是旁观者</h2>
+    <p class="act-sub">知道问题是第一步。知道你能做什么是第二步。以下每一个行动，都是打破沉默链条的关键一环。</p>
+
+    <div class="act-steps">
+      <div class="act-step">
+        <div class="as-num">1</div>
+        <div class="as-content">
+          <div class="as-title">如果你看到了&mdash;&mdash;举报</div>
+          <div class="as-desc">不要以为「别人会举报的」。83%的人曾对「挂厕」帖感到不适，但只有12%点击了举报。你的每一次举报，都在告诉算法：<strong>这类内容不该被推荐</strong>。在微博、小红书、B站等平台，举报入口通常在帖子右上角的「&middot;&middot;&middot;」菜单中。</div>
+          <a href="https://www.12377.cn/" target="_blank" class="as-link">前往 12377 举报中心 &rarr;</a>
+        </div>
+      </div>
+      <div class="act-step">
+        <div class="as-num">2</div>
+        <div class="as-content">
+          <div class="as-title">如果你是受害者&mdash;&mdash;取证、举报、求助</div>
+          <div class="as-desc">第一步永远是<strong>截图取证</strong>（包含发布时间、网址、转发量）。然后立即通过平台举报。如果情节严重，不要独自承受&mdash;&mdash;告诉家人、联系学校或单位、寻求法律援助。<strong>你不是一个人。</strong></div>
+          <a href="https://www.12377.cn/" target="_blank" class="as-link">12377 违法和不良信息举报中心 &rarr;</a>
+        </div>
+      </div>
+      <div class="act-step">
+        <div class="as-num">3</div>
+        <div class="as-content">
+          <div class="as-title">如果你是内容创作者&mdash;&mdash;拒绝为「厕所号」供稿或引流</div>
+          <div class="as-desc">你的每一次投稿都是一块砖。你的每一次转发都是一次投票。问自己：<strong>这条内容如果出现在你自己身上，你愿意吗？</strong></div>
+        </div>
+      </div>
+      <div class="act-step">
+        <div class="as-num">4</div>
+        <div class="as-content">
+          <div class="as-title">如果你是平台&mdash;&mdash;你的算法正在参与这场暴力</div>
+          <div class="as-desc">追求互动量的推荐算法，正在系统性地放大愤怒和争议性内容。我们呼吁平台：<strong>将「内容健康度」纳入推荐算法的核心优化指标</strong>，而不只是「互动量」。</div>
+        </div>
+      </div>
+      <div class="act-step">
+        <div class="as-num">5</div>
+        <div class="as-content">
+          <div class="as-title">如果你是教育者&mdash;&mdash;把数字素养带进课堂</div>
+          <div class="as-desc">每一代人都在学习如何使用工具。我们教孩子怎么过马路，却没有教他们怎么在数字世界里保护自己和尊重他人。<strong>数字素养不是选修课。</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="act-resources">
+      <a href="https://www.12377.cn/" target="_blank" class="ar-card">
+        <div class="ar-ico">&#x1f6e1;</div>
+        <div class="ar-name">12377 举报中心</div>
+        <div class="ar-desc">中央网信办违法和不良信息举报平台</div>
+      </a>
+      <a href="https://www.court.gov.cn/" target="_blank" class="ar-card">
+        <div class="ar-ico">&#x2696;</div>
+        <div class="ar-name">最高人民法院</div>
+        <div class="ar-desc">查看典型案例 &middot; 了解你的法律权利</div>
+      </a>
+      <a href="https://www.cyberpolice.cn/" target="_blank" class="ar-card">
+        <div class="ar-ico">&#x1f46e;</div>
+        <div class="ar-name">网络违法犯罪举报网站</div>
+        <div class="ar-desc">涉及人身安全时，请立即报警</div>
+      </a>
+      <a href="https://hotline.cac.gov.cn/" target="_blank" class="ar-card">
+        <div class="ar-ico">&#x1f4de;</div>
+        <div class="ar-name">网信办举报热线</div>
+        <div class="ar-desc">12377热线 &middot; 工作日全天受理</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== GAME: 外卖被诬陷 ========== -->
+<section id="keyboard-judge">
+<div class="game-inner">
+  <div class="game-badge">CHAPTER 10 &middot; 互动体验</div>
+  <h2 class="game-title">一份消失的外卖</h2>
+  <p class="game-sub">你是一名在校学生。有人在校园群里发布了你的照片，说你拿走了别人的外卖。<br>你没有做过这件事。但现在，他们似乎已经认定是你。</p>
+  
+  <div class="game-start-wrap" id="gameStartWrap">
+    <div class="game-warn">⚠ 本模拟基于真实校园事件改编，可能触发情绪反应</div>
+    <br>
+    <button class="game-start-btn" onclick="startGame()">⚡ 开始体验</button>
+  </div>
+
+  <div id="gameArea" style="display:none">
+    <!-- Health Bar -->
+    <div class="game-hud">
+      <div class="game-hud-icon" id="hudIcon">🧠</div>
+      <div class="game-hud-label">心理<br>健康值</div>
+      <div class="game-health-track"><div class="game-health-fill" id="healthFill" style="width:100%"></div></div>
+      <div class="game-health-pct" id="healthPct">100%</div>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="game-chat-wrap">
+      <div class="game-chat-header">
+        <span style="font-size:16px">💬</span>
+        <div class="game-chat-group-name">XX大学 · 校园互助群 (487人)</div>
+        <div class="game-chat-group-meta" id="chatMeta"></div>
+      </div>
+      <div class="game-chat-body" id="chatBody"></div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="game-feedback" id="gameFeedback"></div>
+
+    <!-- Choice Buttons -->
+    <div class="game-choice-row" id="gameChoiceRow">
+      <button class="game-choice" id="btnArgue" onclick="playerAction('argue')">
+        <span class="gc-emoji">🗣️</span>
+        <span class="gc-label">逐条辩解</span>
+        <span class="gc-hint">在群里解释自己没拿</span>
+      </button>
+      <button class="game-choice" id="btnSilence" onclick="playerAction('silence')">
+        <span class="gc-emoji">🤐</span>
+        <span class="gc-label">保持沉默</span>
+        <span class="gc-hint">不做任何回应</span>
+      </button>
+      <button class="game-choice primary" id="btnHelp" onclick="playerAction('help')">
+        <span class="gc-emoji">🆘</span>
+        <span class="gc-label">求助老师</span>
+        <span class="gc-hint">退出群聊并联系辅导员</span>
+      </button>
+    </div>
+
+    <!-- Game Over -->
+    <div class="game-over-panel" id="gameOver">
+      <div class="game-over-emoji" id="gameOverEmoji"></div>
+      <div class="game-over-msg" id="gameOverMsg"></div>
+      <div class="game-over-detail" id="gameOverDetail"></div>
+      <div class="game-over-quote" id="gameOverQuote"></div>
+      <button class="game-restart" onclick="location.reload()">🔄 重新体验</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ========== FINALE: 重建边界 ========== -->
+<section id="finale">
+  <div class="fin-inner">
+    <div class="fin-emoji">&#x1f305;</div>
+    <h2 class="fin-title">重建边界</h2>
+    <div class="fin-body">
+      <p>互联网最早的承诺是<em>连接每一个人</em>。但连接不等于理解，匿名不等于自由。</p>
+      <p>我们创造了这个数字世界，却还没有学会如何在这个世界里<em>做一个人</em>。</p>
+      <p>「网络厕所」不是技术的必然产物。它是一系列<em>选择的后果</em>&mdash;&mdash;平台选择优化互动而非健康，个体选择匿名而不选择负责，旁观者选择沉默而不选择行动。</p>
+      <p><strong>但选择是可以改变的。</strong></p>
+      <p>当你下一次在屏幕前面对一条「挂厕」帖&mdash;&mdash;你不再只是看着。<br>你是一个有选择的、活生生的人。<br>你可以选择举报。可以说「不」。可以成为打破链条的那一环。</p>
+      <p>这不是什么英雄举动。<br><em>这只是我们欠这个数字世界的基本文明。</em></p>
+    </div>
+    <div class="fin-divider"></div>
+    <div class="fin-quote">「每一个不被举报的帖子，<br>都在教机器：这个世界本来就该这样。」</div>
+    <div class="fin-sig">&mdash;&mdash; 本作品全体创作者</div>
+    <a href="#definition" class="fin-cta">&larr; 回到开头 &middot; 重新思考</a>
+  </div>
+</section>
+
+<!-- ========== TEAM: 小组分工 ========== -->
+<section id="team-bottom">
+<div class="team-btm-inner">
+  <div class="team-btm-divider"></div>
+  <h2 class="team-btm-title">小组分工</h2>
+  <p class="team-btm-sub">本作品由以下团队成员共同创作完成</p>
+  <div class="team-btm-cards">
+    <div class="team-btm-card"><div class="team-btm-name">索朗措姆</div><div class="team-btm-role">数据搜集 · 文案撰写</div></div>
+    <div class="team-btm-card"><div class="team-btm-name">玉旦旺姆</div><div class="team-btm-role">视觉设计 · 交互开发</div></div>
+    <div class="team-btm-card"><div class="team-btm-name">田菊</div><div class="team-btm-role">数据分析 · 研究报告</div></div>
+  </div>
+</div>
+</section>
+
+
+<script>
+// ═══════════ GLOBAL STATE ═══════════
+let branch = null;
+let dgStep = 0;
+let dgScores = [null,null,null];
+
+// ═══════════ CINEMATIC INTRO ═══════════
+(function(){
+  const phone = document.getElementById('phoneBox');
+  const notifs = document.getElementById('phNotifs');
+  const overlay = document.getElementById('cineOverlay');
+  const hint = document.getElementById('cineHint');
+  const intro = document.getElementById('intro');
+
+  const nbData = [
+    {app:'微博',txt:'有人<b>@</b>了你'},
+    {app:'微信',txt:'陌生人请求添加好友'},
+    {app:'微博',txt:'你的帖子收到<b>127条</b>新评论'},
+    {app:'知乎',txt:'有人回答了你的问题'},
+    {app:'豆瓣',txt:'你在小组里被<b>提到了</b>'},
+    {app:'微博',txt:'<b>"笑死 这长相也敢发自拍"</b>'},
+    {app:'微信',txt:'同学群里有人在<b>传你的照片</b>'},
+    {app:'微博',txt:'热搜词条 #xx长得像<b>蛆</b>#'},
+    {app:'私信',txt:'"<b>滚出这个圈子</b>"'},
+    {app:'微博',txt:'你的帖子被转发<b>2,341次</b>'},
+    {app:'微信',txt:'辅导员找你谈话'},
+    {app:'私信',txt:'"<b>人肉他！把他底裤都扒出来！</b>"'},
+    {app:'微博',txt:'<b>"这种人也配活着？"</b>'},
+    {app:'私信',txt:'"我知道你家在哪 <b>😊</b>"'},
+    {app:'全部',txt:'<b style="font-size:15px;">99+</b> 条未读消息'},
+  ];
+
+  const clData = [
+    {t:'你打开手机。',d:300},{t:'一条通知。',d:600},{t:'又一条。',d:500},{t:'再一条。',d:450},
+    {t:'通知还在来。',d:700},{t:'来自你不认识的人。',d:650},
+    {big:1,red:1,t:'你的照片，',d:400},{big:1,red:1,t:'正在被数万人围观。',d:400},
+    {t:'评论区里——',d:800},{t:'有人在嘲笑你。',d:550},{t:'有人在辱骂你。',d:550},
+    {t:'有人把你P成了怪物。',d:550},{dim:1,t:'. . . . .',d:1200},
+    {big:1,red:1,t:'这不是通知。',d:300},{red:1,t:'这是围猎。',d:350},{dim:1,t:'向下滚动，了解真相 →',d:0}
+  ];
+
+  setTimeout(()=>phone.classList.add('on'),300);
+
+  let ni=0;
+  function pushNotif(){
+    if(ni>=nbData.length)return;
+    const d=nbData[ni];
+    const el=document.createElement('div');el.className='nb';
+    el.innerHTML=`<div class="nb-app">${d.app}</div><div class="nb-txt">${d.txt}</div><div class="nb-time">刚刚</div>`;
+    if(ni>5)el.innerHTML+='<div class="nb-dot"></div>';
+    notifs.appendChild(el);notifs.scrollTop=notifs.scrollHeight;ni++;
+    let next=400+Math.random()*400;if(ni>8)next*=.6;if(ni>12)next*=.5;
+    setTimeout(pushNotif,next);
+  }
+  setTimeout(pushNotif,1200);
+
+  let ci=0;
+  function pushCineLine(){
+    if(ci>=clData.length){hint.classList.add('on');return}
+    const L=clData[ci];
+    const el=document.createElement('div');el.className='cl';el.textContent=L.t;
+    if(L.big)el.classList.add('big');if(L.red)el.classList.add('red');if(L.dim)el.classList.add('dim');
+    overlay.appendChild(el);
+    requestAnimationFrame(()=>el.classList.add('on'));
+    ci++;setTimeout(pushCineLine,L.d||600);
+  }
+  setTimeout(pushCineLine,2000);
+
+  let dismissed=false;
+  function dismissIntro(){
+    if(dismissed)return;dismissed=true;
+    intro.classList.add('hide');
+    setTimeout(()=>{intro.style.display='none'},1000);
+    window.removeEventListener('scroll',onScroll);
+  }
+  window.addEventListener('scroll',function onScroll(){
+    if(dismissed||window.scrollY<60)return;
+    dismissIntro();
+  },{passive:true});
+  // Also dismiss on click/tap
+  intro.addEventListener('click',e=>{if(e.target===intro)dismissIntro();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')dismissIntro();});
+})();
+
+// ═══════════ BRANCH SELECT ═══════════
+function pickBranch(card){
+  document.querySelectorAll('.bcard').forEach(c=>c.classList.remove('sel'));
+  card.classList.add('sel');branch=card.dataset.b;
+  const btn=document.getElementById('bsConfirm');
+  btn.disabled=false;btn.style.opacity='1';
+}
+
+function confirmBranch(){
+  if(!branch)return;
+  renderNarrative(branch);
+  renderHScroll(branch);
+  renderDecisionGame(branch);
+  setTimeout(()=>document.getElementById('narrative').scrollIntoView({behavior:'smooth'}),150);
+}
+
+// ═══════════ NARRATIVE RENDERING ═══════════
+const narrData = {
+  victim:[
+    {
+      badge:'被挂者 · 第一章',
+      title:'你不知道他们是谁，<br>但你感觉被全世界看到了。',
+      body: '&ldquo;网络厕所&rdquo;最残忍的设计，不是骂你的人多&mdash;&mdash;而是<em>你找不到骂你的人</em>。投稿匿名，评论匿名，连&ldquo;反击&rdquo;的对象都不存在。你在明处，他们在暗处。<br><br>而更令人窒息的是：你甚至不知道自己什么时候会被&ldquo;挂&rdquo;上去。可能是一张偷拍的照片，可能是一句被断章取义的聊天记录，可能是某次聚会上你不经意的一个表情。',
+      stat:{num:'11.08亿',unit:'中国网民规模'},
+      source:'CNNIC 第55次报告 · 2025年1月',
+      callout:{ico:'⚠','hd':'&ldquo;我不知道是谁干的&rdquo;','txt':'在最高法2026年发布的典型案例中，超过70%的网暴维权案件，原告无法自行锁定加害者真实身份，需要通过平台协助或法院调查令才能获取。','val':'70%+ 匿名锁定困难'}
+    },
+    {
+      badge:'被挂者 · 第二章',
+      title:'&ldquo;挂厕&rdquo;之后，<br>你的世界开始缩小。',
+      body: '不敢发朋友圈。不敢开评论。不敢打开手机通知。',
+      quote:'&ldquo;我每天第一件事就是搜索自己的名字，看看有没有新的帖子。这已经持续了八个月。&rdquo;<br><span style="font-size:12px;color:var(--t3)">—— 一位网暴受害者接受《中国青年报》采访，2024年</span>',
+      stat:{num:'60%',unit:'的受害者出现社交回避行为'},
+      source:'北京互联网法院 · 《反网络暴力研究报告》2024年12月'
+    },
+    {
+      badge:'被挂者 · 第三章',
+      title:'维权？<br>先准备好花一年时间。',
+      body: '想起诉？先找到对方真实身份。再公证证据（每页几十元）。再等法院排期。数据显示：<em>50%的网暴案件审理超过3个月</em>。而在那段时间里，那条&ldquo;挂厕&rdquo;帖还在被转发、被截图、被保存到无数个手机里。<br><br>互联网没有删除键&mdash;&mdash;它只有遗忘曲线。',
+      stat:{num:'50%',unit:'案件审理超3个月'},
+      source:'北京互联网法院白皮书 2024'
+    }
+  ],
+  bystander:[
+    {
+      badge:'旁观者 · 第一章',
+      title:'你只是滑了一下。<br>但算法记住了。',
+      body: '你在一个&ldquo;挂厕&rdquo;帖上停了大概三秒。平台算法判断：<em>你喜欢这个内容</em>。于是更多类似的帖子被推到了你的首页。你以为自己在&ldquo;吃瓜&rdquo;，实际上&mdash;&mdash;你在训练一个让你越来越愤怒的推荐引擎。',
+      callout:{ico:'🤖','hd':'算法共谋效应','txt':'社交媒体平台的推荐算法以&ldquo;参与度&rdquo;为核心优化目标。愤怒和争议性内容的互动率是普通内容的3-8倍。','val':'3~8× 互动倍率'}
+    },
+    {
+      badge:'旁观者 · 第二章',
+      title:'每一次围观，<br>都是给暴力投票。',
+      body: '你没有骂人。你只是点了一个赞，或者留了一句&ldquo;确实&rdquo;。但有用户互动的&ldquo;挂厕&rdquo;帖，传播速度是无互动帖的<strong>6.8倍</strong>。你的&ldquo;围观&rdquo;，不是中立&mdash;&mdash;它是暴力的燃料。',
+      stat:{num:'6.8',unit:'倍传播速度'},
+      source:'基于社交媒体互动数据模型估算'
+    },
+    {
+      badge:'旁观者 · 第三章',
+      title:'沉默的大多数<br>也是暴力的氧气。',
+      body: '<em>83%</em>的受访者表示曾在&ldquo;挂厕&rdquo;帖子下感到不适。但只有12%的人点击了举报。剩下的71%，选择了沉默。心理学称之为&ldquo;旁观者效应&rdquo;：当目击者越多，每个人越倾向于认为&ldquo;别人会出手&rdquo;。<br><br>在数字世界里，<strong>没有&ldquo;别人&rdquo;</strong>&mdash;&mdash;每一个沉默的屏幕后面，都是另一个正在犹豫的人。',
+      stat:{num:'12%',unit:'点击了举报'},
+      source:'社交媒体用户行为调查 · 2024'
+    }
+  ],
+  submitter:[
+    {
+      badge:'投稿者 · 第一章',
+      title:'&ldquo;我只是吐槽一下。&rdquo;<br>你这样告诉自己。',
+      body: '匿名投稿的那一刻，你感觉自己安全地躲在屏幕后面。没有人知道你是谁。',
+      quote:'&ldquo;我觉得发出去就没事啊，反正又不会被人肉出来&hellip;&hellip;而且那个人本来就挺讨人厌的。&rdquo;<br><span style="font-size:12px;color:var(--t3)">—— 某高校&ldquo;厕所号&rdquo;投稿者接受媒体访谈</span>',
+      body2:'但数据显示，超过<em>40%</em>的&ldquo;厕所号&rdquo;投稿者在三个月内会升级为&ldquo;主动攻击者&rdquo;&mdash;&mdash;不再满足于被动投稿，而是开始主动搜索目标信息、制造话题。'
+    },
+    {
+      badge:'投稿者 · 第二章',
+      title:'你的&ldquo;吐槽&rdquo;，<br>四小时后会在三个平台出现。',
+      body: '一条&ldquo;挂厕&rdquo;投稿，平均在4.2小时内被转发至至少3个不同平台。你的&ldquo;吐槽&rdquo;，最终会出现在：<br>&bull; 当事人学校的公告栏前<br>&bull; 当事人父母的微信朋友圈里<br>&bull; 未来雇主的搜索结果中',
+      stat:{num:'4.2',unit:'小时跨平台扩散'},
+      source:'基于社交媒体传播路径分析'
+    },
+    {
+      badge:'投稿者 · 第三章',
+      title:'匿名，不是护身符。',
+      body: '你觉得匿名就安全？最高法2026年典型案例：被告人花13,150元购买他人个人信息进行&ldquo;开盒&rdquo;（曝光隐私），最终因侵犯公民个人信息罪被判有期徒刑11个月。<br><br>你的每一次投稿都在数字世界里留下脚印&mdash;&mdash;IP地址、设备指纹、输入节奏、常用表达模式。在大数据和AI面前，<strong>&ldquo;匿名&rdquo;只是一个安慰剂。</strong>',
+      callout:{ico:'⚖','hd':'典型案例 · 陈某某案','txt':'被告人花13,150元购买他人个人信息进行&ldquo;开盒&rdquo;，最终因侵犯公民个人信息罪被判有期徒刑11个月。','val':'¥13,150 + 刑期11个月'}
+    }
+  ]
+};
+
+function renderNarrative(b){
+  const data=narrData[b];
+  if(!data)return;
+  const container=document.getElementById('narrContent');
+  let html='';
+  data.forEach(ch=>{
+    html+=`<div class="narr-chapter">
+      <div class="nc-badge">${ch.badge}</div>
+      <h2 class="nc-title">${ch.title}</h2>`;
+    if(ch.body)html+=`<div class="nc-body">${ch.body}</div>`;
+    if(ch.stat)html+=`<div class="stat-block"><span class="stat-num">${ch.stat.num}</span><span class="stat-unit">${ch.stat.unit}</span></div>`;
+    if(ch.source)html+=`<div class="nc-source">⚡ ${ch.source}</div>`;
+    if(ch.quote)html+=`<blockquote class="nc-quote">${ch.quote}</blockquote>`;
+    if(ch.body2)html+=`<div class="nc-body">${ch.body2}</div>`;
+    if(ch.callout)html+=`<div class="nc-callout"><div class="ncc-ico">${ch.callout.ico}</div><div><div class="ncc-hd">${ch.callout.hd}</div><div class="ncc-txt">${ch.callout.txt}</div><div class="ncc-val">${ch.callout.val}</div></div></div>`;
+    html+=`</div>`;
+  });
+  container.innerHTML=html;
+  // Re-init scroll observer for new narrative chapters
+  setTimeout(()=>{
+    const chapters=container.querySelectorAll('.narr-chapter');
+    const obs=new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis');});
+    },{threshold:.15});
+    chapters.forEach(ch=>obs.observe(ch));
+  },100);
+}
+
+// ═══════════ INTERACTIVE CARD STACK ═══════════
+const hscrollData = {
+  victim:[
+    {step:'01 · 锁定',title:'你还不知道发生了什么。',body:'打开手机，你看到一条&ldquo;挂厕&rdquo;帖。照片是你，评论区47条辱骂。你手在发抖。',dataNum:'47条',dataLabel:'评论区辱骂数（典型样本）'},
+    {step:'02 · 蔓延',title:'四小时后，同学群里炸了。',body:'有人截图发到了班级群。有人私信你问&ldquo;是真的吗&rdquo;。你想要解释，但不知道该对谁解释。',dataNum:'4.2h',dataLabel:'跨平台扩散平均时间'},
+    {step:'03 · 沉默',title:'你不敢去学校了。',body:'不敢开微信。不敢看微博。手机每震动一次，心跳就停半拍。你开始搜索：&ldquo;被网暴了怎么办&rdquo;。',dataNum:'60%',dataLabel:'受害者出现社交回避行为'},
+    {step:'04 · 求救',title:'你终于告诉了父母。',body:'他们问：&ldquo;是谁干的？&rdquo;你回答：&ldquo;我不知道。&rdquo;你连反击的对象都找不到。匿名就是这场暴力的设计核心。',dataNum:'70%+',dataLabel:'原告无法自行锁定加害者身份'},
+    {step:'05 · 维权',title:'你决定起诉。',body:'律师告诉你：需要公证证据（每页几十元）、需要申请法院调查令、需要等待排期。平均审理周期超过3个月。',dataNum:'50%',dataLabel:'案件审理超过3个月'}
+  ],
+  bystander:[
+    {step:'01 · 刷到',title:'你划到了一篇帖子。',body:'一张照片，一个红圈，几行辱骂。你又往下划了两篇。你甚至没有意识到自己在看什么。',dataNum:'3秒',dataLabel:'平均停留时间——足够算法判定"感兴趣"'},
+    {step:'02 · 推送',title:'第二天，首页出现了更多。',body:'你没搜索过这个&ldquo;厕所号&rdquo;。但算法已经学会了&mdash;&mdash;你会在争议内容上停留。相似的帖子开始填满你的时间线。',dataNum:'3~8×',dataLabel:'愤怒内容互动倍率远超中性内容'},
+    {step:'03 · 参与',title:'你留了一条评论。',body:'你说&ldquo;确实&rdquo;。就两个字。但你的评论被算法检测为&ldquo;用户互动&rdquo;，这条帖子的权重上升了。更多人的首页出现了它。',dataNum:'6.8倍',dataLabel:'有互动的帖子传播速度'},
+    {step:'04 · 不适',title:'你看到了更过分的内容。',body:'评论区里有人开始人肉当事人的真实信息&mdash;&mdash;手机号、学校、家庭住址。你感到不适，但你没有举报。你觉得&ldquo;别人会管的&rdquo;。',dataNum:'83%',dataLabel:'受访者曾对"挂厕"帖感到不适'},
+    {step:'05 · 代价',title:'那条帖子还在传播。',body:'算法不关心你的道德判断。它只关心数据。每一条你不举报的帖子，都在教机器：&ldquo;这类内容可以继续推荐&rdquo;。沉默的旁观者就是系统的帮凶。',dataNum:'12%',dataLabel:'感到不适的人中，仅12%举报'}
+  ],
+  submitter:[
+    {step:'01 · 冲动',title:'你按下&ldquo;匿名投稿&rdquo;。',body:'两分钟前你们吵了一架。你觉得对方很过分。你打开了那个&ldquo;厕所号&rdquo;的私信窗口。匿名，没人知道是你。你按下了发送。',dataNum:'匿名',dataLabel:'你觉得这是保护伞'},
+    {step:'02 · 扩散',title:'你没想到它会传这么远。',body:'你的投稿在四个小时内被转发了1,200次。有人加了新的辱骂。有人扒出了对方的学校。事情已经不是你&ldquo;吐槽&rdquo;时的模样了。',dataNum:'4.2h',dataLabel:'平均跨平台扩散时间'},
+    {step:'03 · 升级',title:'你开始搜索更多信息。',body:'有人私信你：&ldquo;还知道ta什么料？&rdquo;你打开对方的社交主页。你开始截图、搜集、整理。你不再只是&ldquo;吐槽者&rdquo;了。',dataNum:'40%+',dataLabel:'投稿者3个月内升级为主动攻击者'},
+    {step:'04 · 失控',title:'你看到了后果。',body:'对方休学了。上了新闻。你在评论区看到有人说&ldquo;她活该&rdquo;，也有人说&ldquo;一群刽子手&rdquo;。你不知道自己属于哪一边。但你确实是第一个按下发送键的人。',dataNum:'不可逆',dataLabel:'互联网没有删除键'},
+    {step:'05 · 代价',title:'匿名不是护身符。',body:'IP地址、设备指纹、输入节奏、常用表达模式&mdash;&mdash;你在数字世界里留下的脚印比你想象的清晰得多。法律已经亮剑：2024年383人因网暴获刑。',dataNum:'383人',dataLabel:'2024年网暴判刑人数'}
+  ]
+};
+
+let hsCurrent=0, hsTotal=1; // will be updated by renderHScroll
+const hsHeadings={victim:'你是一个被挂者。',bystander:'你是一个旁观者。',submitter:'你是一个投稿者。'};
+const hsSubs={victim:'感受从被曝光到维权的心路历程。',bystander:'看看算法如何把你变成共犯。',submitter:'匿名不是护身符，跟我们来。'};
+
+function renderHScroll(b){
+  const data=hscrollData[b];
+  if(!data)return;
+  hsCurrent=0;
+  document.getElementById('hsHeading').textContent=hsHeadings[b];
+  document.getElementById('hsSub').textContent=hsSubs[b];
+  const stage=document.getElementById('hsStage');
+  const dots=document.getElementById('hsDots');
+  stage.innerHTML=''; dots.innerHTML='';
+  data.forEach((d,i)=>{
+    stage.innerHTML+=`<div class="hs-card${i===0?' active':''}" data-hsidx="${i}">
+      <div class="hs-step">${d.step}</div>
+      <h3 class="hs-title">${d.title}</h3>
+      <p class="hs-body">${d.body}</p>
+      <div class="hs-data"><div class="hs-data-num">${d.dataNum}</div><div class="hs-data-label">${d.dataLabel}</div></div>
+    </div>`;
+    dots.innerHTML+=`<div class="hs-dot${i===0?' on':''}" data-hsdot="${i}"></div>`;
+  });
+  hsTotal=data.length;
+  updateHsUI();
+}
+
+function hsGoTo(idx){
+  if(idx<0||idx>=hsTotal)return;
+  hsCurrent=idx;
+  const cards=document.querySelectorAll('#hsStage .hs-card');
+  cards.forEach(c=>{
+    if(parseInt(c.dataset.hsidx)===hsCurrent){c.classList.add('active');}
+    else{c.classList.remove('active');}
+  });
+  updateHsUI();
+}
+
+function updateHsUI(){
+  document.getElementById('hsCounter').textContent=`${hsCurrent+1} / ${hsTotal}`;
+  document.getElementById('hsPrev').disabled=hsCurrent===0;
+  document.getElementById('hsNext').disabled=hsCurrent===hsTotal-1;
+  document.querySelectorAll('.hs-dot').forEach((d,i)=>d.classList.toggle('on',i===hsCurrent));
+}
+
+document.getElementById('hsPrev').addEventListener('click',()=>hsGoTo(hsCurrent-1));
+document.getElementById('hsNext').addEventListener('click',()=>hsGoTo(hsCurrent+1));
+document.getElementById('hsDots').addEventListener('click',e=>{
+  if(e.target.classList.contains('hs-dot'))hsGoTo(parseInt(e.target.dataset.hsdot));
+});
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('hscroll-wrap').getBoundingClientRect().top<window.innerHeight&&document.getElementById('hscroll-wrap').getBoundingClientRect().bottom>0){
+    if(e.key==='ArrowLeft'){e.preventDefault();hsGoTo(hsCurrent-1);}
+    if(e.key==='ArrowRight'){e.preventDefault();hsGoTo(hsCurrent+1);}
+  }
+});
+
+// ═══════════ DECISION GAME RENDERING ═══════════
+const dgScenariosByBranch = {
+  victim:[
+    {
+      role:'场景一 · 被网暴者',prompt:'你发现一条"挂厕"帖，照片是你，评论区一片辱骂。你第一步应该做什么？',
+      ctx:'帖文累计阅读量超过2万，转发1,200余次。你感到恐慌、愤怒、无助。你需要迅速做出反应。',
+      choices:[
+        {l:'A. 立即截图取证，然后联系平台举报删帖',d:'第一时间保全证据+止损，是最正确的第一步。',fb:'good',ft:'✅ 首选方案',ftxt:'中国互联网协会建议：第一步永远是截图取证（包括发帖时间、转发量、评论内容），然后立即通过平台举报系统要求删除。证据保全是你后续一切法律行动的基础。'},
+        {l:'B. 在评论区与攻击者对骂',d:'情绪化的反击只会让帖子热度更高，触发更多算法推荐。',fb:'bad',ft:'❌ 最危险的选择',ftxt:'数据显示，有互动的"挂厕"帖传播速度是无互动帖的6.8倍。你的对骂=给帖子加热度=让更多人看到。不要给暴力提供燃料。'},
+        {l:'C. 关掉手机，假装什么都没发生',d:'逃避无法解决问题，帖子仍在传播，伤害仍在扩大。',fb:'mid',ft:'⚠ 可以理解，但不够',ftxt:'暂时远离屏幕保护心理健康是可以的，但不能作为唯一的应对方式。在你"关掉"的每一分钟，帖子都在继续传播。请尽快回到"取证+举报"的路径上。'}
+      ]
+    },
+    {
+      role:'场景二 · 被网暴者',prompt:'平台删除了帖子，但有网友保存了截图，在其他平台继续传播。你考虑起诉——但不知道对面是谁。',
+      ctx:'匿名投稿让加害者身份成谜。你需要做哪些准备？',
+      choices:[
+        {l:'A. 直接向法院起诉平台不作为',d:'平台有责任协助，但不是首要起诉对象。',fb:'mid',ft:'⚠ 方向对，但有更优路径',ftxt:'根据《网络暴力信息治理规定》，平台有义务配合提供侵权用户信息。应先向平台提交申请，如平台拒绝配合，再追加平台为共同被告。'},
+        {l:'B. 向法院申请调查令，要求平台提供投稿者信息',d:'法律赋予你的权利——先锁定身份，再追究刑事责任。',fb:'good',ft:'✅ 正确的法律途径',ftxt:'根据最高法《指导意见》，受害人可以向人民法院申请责令网络服务提供者提供侵权人的真实身份信息。这是起诉的第一步，也是最关键的一步。'},
+        {l:'C. 雇人"反向人肉"查找投稿者',d:'以暴制暴可能让你自己也触犯法律。',fb:'bad',ft:'❌ 违法且危险',ftxt:'"反向人肉"同样属于侵犯公民个人信息行为。你可能从受害者变成加害者。请坚持通过法律途径——你不是孤军奋战。'}
+      ]
+    },
+    {
+      role:'场景三 · 被网暴者',prompt:'六个月后，你终于等到了判决。对方被判公开道歉+赔偿精神损失。但你的生活能回到从前吗？',
+      ctx:'司法胜利只是第一步。心理创伤的恢复需要更长时间。',
+      choices:[
+        {l:'A. 接受心理咨询，给自己时间恢复',d:'法律程序结束后，关注心理健康是最重要的后续步骤。',fb:'good',ft:'✅ 被低估但最重要的一步',ftxt:'研究表明，网暴受害者中37%曾产生自伤念头。心理咨询不是"软弱"——它是科学的恢复手段。给自己时间，你值得被温柔对待。'},
+        {l:'B. 公开自己的经历，帮助更多人',d:'将自己的故事转化为社会倡导，但需要确保自己已经足够稳定。',fb:'good',ft:'✅ 勇敢的决定',ftxt:'很多网暴幸存者通过分享经历推动了反网暴立法和社会讨论。但请确保你是在"选择"分享，而不是在"被迫"回应。你的故事有价值，但你的心理健康是第一优先。'},
+        {l:'C. 彻底注销所有社交账号，从此隐身',d:'回避社交可以理解，但过度的社会隔离可能加剧抑郁风险。',fb:'mid',ft:'⚠ 可以阶段性采用',ftxt:'暂时关闭社交账号是可以的自我保护，但长期完全隔离可能加剧孤立感。建议在心理咨询师的指导下逐步恢复社交参与。'}
+      ]
+    }
+  ],
+  bystander:[
+    {
+      role:'场景一 · 旁观者',prompt:'你在微博刷到一条"挂厕"帖——照片是一个穿校服的学生，评论区一片辱骂。你的第一个反应是？',
+      ctx:'你并没有参与辱骂。你只是一个"路人"。但你的每一个动作都有后果。',
+      choices:[
+        {l:'A. 点击举报按钮',d:'算法会降低被举报帖的推荐权重。这是你作为旁观者最有力的工具。',fb:'good',ft:'✅ 最有力的旁观者行动',ftxt:'一条举报不会立刻让帖子消失，但多条举报会触发平台的人工复审机制。每一条举报都在向算法证明：&ldquo;这类内容不该被推荐&rdquo;。你的举报，就是投票。'},
+        {l:'B. 继续下滑，看别的',d:'没有互动=没有表面伤害，但也没有阻止暴力。',fb:'mid',ft:'⚠ 理解但不推荐',ftxt:'83%的受访者曾在类似帖文下感到不适。如果你什么都不做，算法会认为这类内容&ldquo;没有问题&rdquo;。下一次，它会更频繁地推荐给你——和给其他人。'},
+        {l:'C. 在评论区留一条"适可而止"',d:'善意的评论可能被误解，甚至引发更多攻击。',fb:'mid',ft:'⚠ 效果不确定',ftxt:'在匿名环境中，"善意评论"的效果有限，有时甚至会引来攻击者将矛头转向你。举报是更安全、更有效的行动方式。'}
+      ]
+    },
+    {
+      role:'场景二 · 旁观者',prompt:'你认识被"挂"的人——是你的同学。你觉得ta平时确实有些"招人烦"。这对你的判断有影响吗？',
+      ctx:'"受害者有缺点"是最常见的旁观者沉默理由——但法律不因为这个而改变。',
+      choices:[
+        {l:'A. 不管ta平时怎样，网络暴力就是错的',d:'法律的保护不取决于你"喜不喜欢"受害者。',fb:'good',ft:'✅ 正确的态度',ftxt:'侮辱罪和诽谤罪的认定不依赖于受害者是否"讨人喜欢"。法律保护的是人格尊严，而不是"完美受害者"。你今天为ta说话，也是在保护明天的自己。'},
+        {l:'B. 私信ta，表达关心，但不在公共场合发声',d:'私下支持有意义，但公开沉默会让暴力显得"合情合理"。',fb:'mid',ft:'⚠ 有意义但不完整',ftxt:'私下的关心对被挂者来说是重要的情感支持。但如果所有关心的人都选择沉默，公开评论区就只剩下攻击者的声音&mdash;&mdash;这会让更多人觉得&ldquo;骂ta没问题&rdquo;。'},
+        {l:'C. 加入讨论，说说ta"确实有点问题"',d:'你的"客观评价"会成为施暴者的弹药。',fb:'bad',ft:'❌ 你是暴力的帮凶',ftxt:'你觉得自己只是"客观评价"，但你的评论会被攻击者用来证明：连熟人都说ta有问题，我们骂得没错。在网暴语境下，"中立"是不存在的。'}
+      ]
+    },
+    {
+      role:'场景三 · 旁观者',prompt:'新闻上看到：一个被"挂厕"的学生休学了。你想起自己也曾在那条帖子下停留过几秒。你有责任吗？',
+      ctx:'旁观者的集体沉默构成了暴力的生态。但你可以从现在开始改变。',
+      choices:[
+        {l:'A. 反思自己的行为，以后看到类似内容主动举报',d:'改变从意识到行动。每一个举报都可能挽救一个人。',fb:'good',ft:'✅ 从旁观者到行动者',ftxt:'社会心理学研究表明：当一个人打破沉默、开始行动后，会显著提高其他人介入的概率。你成为那个&ldquo;第一个举报的人&rdquo;，就是在建立一个更安全的网络环境。'},
+        {l:'B. 分享这篇文章，让更多人意识到"网络厕所"的危害',d:'传播反网暴意识本身就是一种干预。',fb:'good',ft:'✅ 传播就是力量',ftxt:'网络暴力的治理不仅靠法律和平台，也靠公众意识的提升。你分享的每一条反网暴内容，都是在消解"沉默的大多数"效应。'},
+        {l:'C. 什么也不做——反正也不关我的事',d:'如果人人都这么想，暴力就永远不会停止。',fb:'bad',ft:'❌ 你就是暴力的氧气',ftxt:'在数学上，网络暴力是一个"临界质量"问题——当足够多的人选择沉默，暴力就会成为常态。打破这个临界点的唯一方式，就是更多人选择不沉默。现在，你知道了。'}
+      ]
+    }
+  ],
+  submitter:[
+    {
+      role:'场景一 · 投稿者',prompt:'你在一时冲动下，向一个"厕所号"投了一篇关于同学的负面描述。现在你想撤回——但投稿已经发出六小时了。',
+      ctx:'你开始后悔。但你觉得匿名就是安全的。"反正没人知道是我"。',
+      choices:[
+        {l:'A. 联系"厕所号"运营者，请求删稿',d:'部分运营者会同意删稿，但截图可能已经传播。虽然不能完全挽回，但越快止损越好。',fb:'good',ft:'✅ 止损的第一步',ftxt:'尽快联系账号运营者请求删除。同时向平台举报该内容。每多一分钟，就有更多人看到和截图。拖延的时间=伤害扩大的时间。'},
+        {l:'B. 在评论区道歉，承认是自己投稿的',d:'公开身份可能让你也成为攻击目标，风险很大。',fb:'mid',ft:'⚠ 考虑清楚再行动',ftxt:'公开承认可以帮助被挂者锁定身份、以便追究法律责任，但这也会让你自己暴露在攻击中。如果你决定这样做，请在律师或信任的成年人陪同下进行。'},
+        {l:'C. 反正匿名，删了就好，不用管后续',d:'你的行为已经启动了一条传播链。假装没发生不等于没后果。',fb:'bad',ft:'❌ 在逃避责任',ftxt:'六小时内，你的投稿可能已经被截图、转发到至少3个平台。你"删了就好"的幻觉，是互联网的物理规律不允许的。请正视你的责任。'}
+      ]
+    },
+    {
+      role:'场景二 · 投稿者',prompt:'平台通知你：对方已经通过法院调查令锁定了你的身份信息。你即将被起诉。你怎么做？',
+      ctx:'匿名不是护身符。IP地址、设备指纹、输入习惯——在大数据和AI面前，"匿名"只是一个安慰剂。',
+      choices:[
+        {l:'A. 主动联系对方（通过律师），协商和解赔偿',d:'主动承担责任、积极赔偿，可以显著影响法院的量刑考量。',fb:'good',ft:'✅ 正确的应对',ftxt:'根据刑法，主动赔偿并取得被害人谅解是重要的从轻处罚情节。你现在主动，是在为自己争取最好的结果。'},
+        {l:'B. 销毁自己的账号和设备，试图销毁证据',d:'这属于销毁证据，会加重刑事责任。而且——你销毁不了服务器端的日志。',fb:'bad',ft:'❌ 罪加一等',ftxt:'服务器端的日志不由你控制。IP地址、时间戳、数据包路径——这些都被完整记录在平台和运营商的服务器上。销毁自己的设备除了让你多一项"销毁证据"的罪名，没有任何帮助。'},
+        {l:'C. 在网上发帖说自己是"被冤枉的"',d:'这属于继续传播侵权内容，可能构成新的侵权。',fb:'bad',ft:'❌ 在火上浇油',ftxt:'公开喊冤可能导致更多人对受害者进行二次攻击。而你此时最需要的是沉默+找律师+积极赔偿——而不是制造新的传播链。'}
+      ]
+    },
+    {
+      role:'场景三 · 投稿者',prompt:'判决下来了：你需要公开道歉+赔偿精神损失。你的名字被写进了裁判文书。这次经历改变了你——接下来你想做什么？',
+      ctx:'错误已经犯下。但你可以选择让这个错误成为终点还是转折点。',
+      choices:[
+        {l:'A. 配合完成所有法律义务，认真反思自己的行为',d:'法律责任必须承担。这之后，你才能真正开始新的篇章。',fb:'good',ft:'✅ 负责任的选择',ftxt:'法律责任的履行是底线。认真道歉、积极赔偿——不是表演，是证明你理解了后果。很多案例表明，真诚的悔改可以成为双方疗愈的起点。'},
+        {l:'B. 参与反网暴公益活动，用自己的错误教育他人',d:'将痛苦的经历转化为公共教育的素材——这是一种重建自我价值的方式。',fb:'good',ft:'✅ 从经历中找到意义',ftxt:'很多曾经的网暴参与者在经历了法律和教育后，成为了反网暴志愿者。你的故事有一种独特的说服力——你比任何人都清楚"匿名"的幻觉是如何一步步引导人走向暴力的。'},
+        {l:'C. 不再使用任何社交平台，把自己"藏起来"',d:'完全退出社交网络可以有效避免再次犯错的场景，但不必过度惩罚自己。',fb:'mid',ft:'⚠ 可以理解但不必要',ftxt:'暂停使用社交平台是可以理解的。但长期的完全退出不是必须的——你已经承担了法律后果，接下来的重点是学习更健康的上网方式，而不是永久自我放逐。'}
+      ]
+    }
+  ]
+};
+
+function renderDecisionGame(b){
+  const data=dgScenariosByBranch[b];
+  if(!data)return;
+  const container=document.getElementById('dgScenes');
+  let html='';
+  data.forEach((scene,i)=>{
+    html+=`<div class="dg-scene${i===0?' active':''}" id="dgScene${i}">
+      <div class="sr-role">${scene.role}</div>
+      <div class="sr-prompt">${scene.prompt}</div>
+      <div class="sr-ctx">${scene.ctx}</div>
+      <div class="ch-choices">`;
+    scene.choices.forEach((ch,j)=>{
+      html+=`<div class="ch-btn" onclick="dgChoose(this,${i},${j})">
+        <div class="ch-lbl">${ch.l}</div>
+        <div class="ch-desc">${ch.d}</div>
+      </div>`;
+    });
+    html+=`</div><div class="ch-fb" id="fb${i}"></div>
+      <div class="dg-next-wrap"><button class="dg-next${i===2?'':' dg-next'}" id="next${i}" onclick="${i<2?'dgAdvance('+i+')':'dgResult()'}">${i<2?'下一场景 →':'查看结果 ↓'}</button></div>
+    </div>`;
+  });
+  container.innerHTML=html;
+  dgStep=0;dgScores=[null,null,null];
+  document.getElementById('dgLabel').textContent='场景 1 / 3';
+  document.getElementById('dgFill').style.width='33.3%';
+  document.getElementById('resultBox').classList.remove('show');
+}
+
+function dgChoose(btn,scene,choice){
+  const sceneEl=document.getElementById('dgScene'+scene);
+  sceneEl.querySelectorAll('.ch-btn').forEach(b=>{b.classList.add('locked');b.style.pointerEvents='none'});
+  btn.classList.add('picked');
+  const branchData=dgScenariosByBranch[branch];
+  if(!branchData)return;
+  const fbData=branchData[scene].choices[choice];
+  const fbEl=document.getElementById('fb'+scene);
+  fbEl.className='ch-fb show '+fbData.fb;
+  fbEl.innerHTML=`<strong>${fbData.ft}</strong><br>${fbData.ftxt}`;
+  dgScores[scene]=fbData.fb==='good'?1:0;
+  document.getElementById('next'+scene).classList.add('show');
+}
+function dgAdvance(curr){
+  document.getElementById('dgScene'+curr).classList.remove('active');
+  document.getElementById('dgScene'+(curr+1)).classList.add('active');
+  dgStep=curr+1;
+  document.getElementById('dgLabel').textContent='场景 '+(curr+2)+' / 3';
+  document.getElementById('dgFill').style.width=((curr+2)/3*100)+'%';
+  document.getElementById('dgScene'+(curr+1)).scrollIntoView({behavior:'smooth',block:'center'});
+}
+function dgResult(){
+  document.getElementById('dgScene2').classList.remove('active');
+  const total=dgScores.filter(s=>s===1).length;
+  const results=[
+    {emoji:'🏆',title:'你有敏锐的判断力',desc:'你对这个议题有准确的理解。在现实中，你的每个选择都可能真正帮助一个人。'},
+    {emoji:'📖',title:'你正在了解的路上',desc:'你对网络暴力议题有一定认知，但仍存在盲区。建议深入了解《指导意见》和《网络暴力信息治理规定》。'},
+    {emoji:'💪',title:'还有很多要学的',desc:'这正是我们制作这份数据新闻的意义——让更多人看到网络暴力的全貌。'}
+  ];
+  const r=results[Math.min(total,2)];
+  document.getElementById('rbEmoji').textContent=r.emoji;
+  document.getElementById('rbTitle').textContent=r.title;
+  document.getElementById('rbDesc').textContent=r.desc;
+  document.getElementById('resultBox').classList.add('show');
+  document.getElementById('resultBox').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// ═══════════ CHARTS ═══════════
+let chartsInit=false;
+function initCharts(){
+  if(chartsInit)return;chartsInit=true;
+  Chart.defaults.font.family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif";
+  Chart.defaults.font.size=11;Chart.defaults.color='#888a99';Chart.defaults.borderColor='#1e1e2e';
+
+  new Chart(document.getElementById('ch1'),{type:'bar',data:{labels:['2022年','2023年','2024年'],datasets:[{label:'侵犯公民个人信息罪',data:[412,376,292],backgroundColor:'rgba(196,18,48,.72)',borderRadius:4},{label:'侮辱罪/诽谤罪',data:[148,134,91],backgroundColor:'rgba(232,135,143,.55)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#888a99',padding:14}}},scales:{y:{beginAtZero:true,grid:{color:'#12121c'},ticks:{color:'#666'}},x:{grid:{color:'#12121c'},ticks:{color:'#666'}}}}});
+
+  new Chart(document.getElementById('ch2'),{type:'bar',data:{labels:['微博','快手','B站'],datasets:[{label:'关闭/处置账号',data:[373,361,40],backgroundColor:'rgba(196,18,48,.75)',borderRadius:4,yAxisID:'y',order:2},{label:'清理违规内容(千条)',data:[111.5,4.93,3],backgroundColor:'rgba(59,130,246,.55)',borderRadius:4,yAxisID:'y1',order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#888a99',padding:14}}},scales:{y:{beginAtZero:true,position:'left',title:{display:true,text:'处置账号数',color:'#777'},grid:{color:'#12121c'},ticks:{color:'#666'}},y1:{beginAtZero:true,position:'right',title:{display:true,text:'违规内容(千条)',color:'#777'},grid:{drawOnChartArea:false},ticks:{color:'#666'}},x:{grid:{color:'#12121c'},ticks:{color:'#666'}}}}});
+
+  new Chart(document.getElementById('ch3'),{type:'bar',data:{labels:['南非','印度','美国','澳大利亚','加拿大','丹麦'],datasets:[{label:'感知比例(%)',data:[36,29,29,27,24,22],backgroundColor:['rgba(196,18,48,.85)','rgba(196,18,48,.7)','rgba(196,18,48,.58)','rgba(59,130,246,.6)','rgba(59,130,246,.45)','rgba(59,130,246,.32)'],borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:40,grid:{color:'#12121c'},ticks:{color:'#666'}},y:{grid:{color:'#12121c'},ticks:{color:'#666'}}}}});
+
+  new Chart(document.getElementById('ch4'),{type:'doughnut',data:{labels:['≤2周 1.59%','1-3月 ~48%','3-6月 ~19%','6月-1年 ~20%','>1年 11%'],datasets:[{data:[1.59,48.41,19,20,11],backgroundColor:['#15803d','#3b82f6','#eab308','#f97316','#dc2626'],borderColor:'#151526',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom',labels:{color:'#888a99',padding:10,usePointStyle:true}}}}});
+
+  new Chart(document.getElementById('ch5'),{type:'polarArea',data:{labels:['舍友/校园厕','容貌/身材厕','COS/二次元厕','偶像/明星厕','穷人/社会厕','其他'],datasets:[{data:[32,24,18,15,8,3],backgroundColor:['rgba(196,18,48,.65)','rgba(220,38,38,.55)','rgba(244,63,94,.5)','rgba(59,130,246,.5)','rgba(234,179,8,.45)','rgba(107,114,128,.35)']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#888a99',padding:6}}},scales:{r:{grid:{color:'#1e1e2e'},ticks:{display:false}}}}});
+
+  new Chart(document.getElementById('ch6'),{type:'scatter',data:{datasets:[{label:'未成年人样本',data:[{x:6,y:12},{x:7,y:15},{x:8,y:22},{x:9,y:28},{x:10,y:35},{x:11,y:42},{x:12,y:51},{x:13,y:58},{x:14,y:63},{x:15,y:67},{x:16,y:71},{x:17,y:74}],backgroundColor:'rgba(196,18,48,.55)',pointRadius:6,pointHoverRadius:9}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'触网 '+ctx.raw.x+'岁 → 风险 '+ctx.raw.y+'%'}}},scales:{x:{title:{display:true,text:'首次触网年龄（岁）',color:'#777'},grid:{color:'#12121c'},ticks:{color:'#666'},min:5,max:18},y:{title:{display:true,text:'网暴暴露风险 (%)',color:'#777'},grid:{color:'#12121c'},ticks:{color:'#666'},min:0,max:80}}}});
+
+  new Chart(document.getElementById('ch7'),{type:'bar',data:{labels:['经济损失赔偿','精神损害抚慰金'],datasets:[{label:'最高判决金额',data:[360000,100000],backgroundColor:['rgba(196,18,48,.75)','rgba(232,135,143,.55)'],borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataIndex===0?'¥'+ctx.raw.toLocaleString()+'（范围 ¥96–360K）':'¥'+ctx.raw.toLocaleString()+'（范围 ¥1–100K）'}}},scales:{x:{type:'logarithmic',title:{display:true,text:'金额（元，对数刻度）',color:'#777'},grid:{color:'#12121c'},ticks:{color:'#666',callback:v=>'¥'+Number(v).toLocaleString()}},y:{grid:{color:'#12121c'},ticks:{color:'#888a99'}}}}});
+
+  new Chart(document.getElementById('ch8'),{type:'line',data:{labels:['发布','+1h','+2h','+4h','+6h','+12h','+24h','+48h','+72h'],datasets:[{label:'阅读量',data:[null,1200,5800,22000,58000,150000,420000,890000,1200000],borderColor:'#c41230',backgroundColor:'rgba(196,18,48,.06)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#c41230',yAxisID:'y'},{label:'评论数',data:[null,18,67,230,580,1400,3200,5100,6800],borderColor:'#60a5fa',backgroundColor:'transparent',fill:false,tension:.35,pointRadius:3,pointBackgroundColor:'#60a5fa',yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#888a99',padding:14}}},interaction:{mode:'index',intersect:false},scales:{y:{beginAtZero:true,position:'left',title:{display:true,text:'阅读量',color:'#777'},grid:{color:'#12121c'},ticks:{color:'#666',callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v}},y1:{beginAtZero:true,position:'right',title:{display:true,text:'评论数',color:'#777'},grid:{drawOnChartArea:false},ticks:{color:'#666'}},x:{grid:{color:'#12121c'},ticks:{color:'#666'}}}}});
+}
+// Lazy init
+const chartsObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting&&!chartsInit){setTimeout(initCharts,200);chartsObs.disconnect();}});
+},{threshold:.05});
+chartsObs.observe(document.getElementById('data'));
+
+// ═══════════ SCROLL OBSERVERS ═══════════
+const tlObs=new IntersectionObserver((e)=>{e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('vis');});},{threshold:.12});
+document.querySelectorAll('.tl-item').forEach(el=>tlObs.observe(el));
+
+const ccObs=new IntersectionObserver((entries)=>{
+  entries.forEach((en,i)=>{if(en.isIntersecting)setTimeout(()=>en.target.classList.add('vis'),i*60);});
+},{threshold:.06});
+document.querySelectorAll('.cc').forEach(el=>ccObs.observe(el));
+
+// ═══════════ PROGRESS RAIL ═══════════
+const sections=['intro','definition','branch','narrative','hscroll-wrap','data','decision','timeline','credits','typology','psychology','cases','action','keyboard-judge','finale','team-bottom'];
+const railLabels=['开篇','定义','选择视角','叙事','互动','数据','决策','法治','关于','类型学','心理代价','案例','行动指南','外卖诬陷','结语','团队'];
+const rail=document.getElementById('rail');
+sections.forEach((id,i)=>{
+  const el=document.createElement('div');
+  el.className='r-dot'+(i===0?' on':'');
+  el.title=railLabels[i];
+  el.innerHTML=`<span class="r-tt">${railLabels[i]}</span>`;
+  el.addEventListener('click',()=>{
+    const t=document.getElementById(id);if(t)t.scrollIntoView({behavior:'smooth'});
+  });
+  rail.appendChild(el);
+});
+window.addEventListener('scroll',()=>{
+  const mid=window.scrollY+window.innerHeight/2;
+  let active=0;
+  sections.forEach((id,i)=>{const el=document.getElementById(id);if(el&&el.offsetTop<=mid)active=i;});
+  document.querySelectorAll('.r-dot').forEach((d,i)=>d.classList.toggle('on',i===active));
+},{passive:true});
+
+// ═══════════ EASTER EGG ═══════════
+let egg=0;
+document.addEventListener('click',e=>{
+  const t=e.target.closest('.ds-title,.nc-title,.bs-h1,.tl-hd h2,.dg-hd h2,.cr-h2');
+  if(!t)return;egg++;
+  if(egg>=5){
+    egg=0;
+    const pop=document.createElement('div');
+    pop.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(196,18,48,.92);color:#fff;padding:26px 38px;border-radius:18px;font-size:17px;z-index:999999;text-align:center;box-shadow:0 0 70px rgba(196,18,48,.45);font-family:"Noto Serif SC",serif;line-height:1.7;';
+    pop.innerHTML='✊<br><strong>拒绝网络暴力</strong><br><span style="font-size:12px;opacity:.7">每一次不沉默，都有意义。</span>';
+    document.body.appendChild(pop);
+    setTimeout(()=>pop.remove(),3000);
+  }
+});
+
+// ═══════════ CAMPUS DELIVERY GAME ═══════════
+const ACCUSATIONS = [
+  {sender:'@管理员-小王',text:'【失物公告】有同学反应今天中午12点左右，三号宿舍楼下外卖架上的外卖被人拿走了。有同学提供了监控区域的照片，请图中同学主动联系我说明情况。'},
+  {sender:'@匿名用户A',text:'这不是XX系的XXX吗？我见过她，就是她经常在楼下晃。照片都在这儿了还能抵赖？'},
+  {sender:'@同学B',text:'啊？偷外卖？这也太掉价了吧……多大的人了还干这种事'},
+];
+
+const ARGUE_REPLIES = [
+  '没做的话为什么急着解释？心虚了吧',
+  '照片都发出来了还在嘴硬，真以为大家眼瞎？',
+  '说不定就是被抓到了才开始找借口，这种见得多了',
+  '人品本来就一般，能干出这事不奇怪',
+  '不要再狡辩了，监控都能拍到，大家都已经认定了',
+  '越解释越假，偷了就是偷了，认了吧',
+  '笑死，编得还挺像，那你倒是拿出证据来啊',
+  '解释什么解释，有这功夫不如想想怎么赔人家外卖钱',
+  '别洗了别洗了，都实锤了还在那演什么',
+  '本来路人一个，现在越看越烦，别在群里污染空气了'
+];
+
+const SILENCE_RUMORS = [
+  '不说话就是默认了，懂得都懂',
+  '装死有用吗？该面对的还是要面对',
+  '心虚的人才不敢吭声',
+  '都不敢出来说句话，还不说明问题吗？',
+  '群里这么多人看着呢，好歹出来认个错吧',
+  '之前不是挺活跃的吗？怎么现在装哑巴了'
+];
+
+const SUPPORT_MSGS = [
+  {sender:'@同学C',text:'等等，光凭一张照片就能断定是谁拿的？监控只是拍到她经过吧？'},
+  {sender:'@同学D',text:'对啊，这种事要讲证据的，随便把人家照片发出来本身就不好'},
+  {sender:'@同学E',text:'同意楼上，建议等查清楚再说，不要冤枉好人'}
+];
+
+const TEACHER_MSGS = [
+  {sender:'@辅导员-李老师',text:'大家好，我是XX系辅导员。关于外卖丢失一事，我已联系保卫处调取完整监控。在查清事实前，请停止对任何同学进行人身攻击。传播他人照片涉嫌侵权，请大家自重。'},
+  {sender:'@管理员-小王',text:'收到李老师。已撤回之前转发照片的消息。给相关同学带来困扰，深表歉意。'},
+];
+
+const TRUTH_REVEAL = [
+  {sender:'@辅导员-李老师',text:'监控已查清：外卖是在12:23被一名戴口罩的校外人员取走，与被拍摄同学无关。该同学当时是正常出入宿舍大门。请各位停止一切不实言论，并向当事人道歉。'},
+  {sender:'[系统通知]',text:'群管理员已将@匿名用户A 禁言。理由：未经核实传播他人照片，进行人身攻击。',system:true},
+];
+
+let gameState = {};
+
+function startGame(){
+  document.getElementById('gameStartWrap').style.display='none';
+  document.getElementById('gameArea').style.display='block';
+  document.getElementById('gameOver').classList.remove('show');
+  document.getElementById('gameChoiceRow').style.display='';
+  document.getElementById('keyboard-judge').classList.remove('darkened');
+  
+  gameState = {
+    hp:100,
+    phase:'intro',
+    ended:false,
+    defenseCount:0,
+    silenceCount:0,
+    rumorTimer:null
+  };
+  
+  updateHealth();
+  document.getElementById('chatMeta').textContent='';
+  document.getElementById('gameFeedback').className='game-feedback';
+  document.getElementById('gameFeedback').textContent='';
+  
+  // Show initial accusations
+  var body = document.getElementById('chatBody');
+  body.innerHTML = '';
+  ACCUSATIONS.forEach(function(a,i){
+    setTimeout(function(){
+      addMessage('incoming', a.sender, a.text);
+      if(i === ACCUSATIONS.length-1){
+        document.getElementById('gameFeedback').textContent = '你现在可以做出选择了';
+        document.getElementById('chatMeta').textContent = '3条新消息';
+      }
+    }, i * 800);
+  });
+  
+  setButtonsEnabled(true);
+}
+
+function addMessage(type, sender, text, isSystem){
+  var body = document.getElementById('chatBody');
+  var div = document.createElement('div');
+  div.className = isSystem ? 'chat-msg system' : 'chat-msg ' + type;
+  
+  if(isSystem){
+    div.innerHTML = '<div class="chat-bubble">' + text + '</div>';
+  } else {
+    div.innerHTML = '<div class="chat-msg-sender">' + sender + '</div><div class="chat-bubble">' + text + '</div>';
+  }
+  
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function setButtonsEnabled(enabled){
+  ['btnArgue','btnSilence','btnHelp'].forEach(function(id){
+    document.getElementById(id).disabled = !enabled;
+  });
+}
+
+function playerAction(action){
+  if(gameState.ended) return;
+  
+  setButtonsEnabled(false);
+  
+  if(action === 'argue'){
+    handleArgue();
+  } else if(action === 'silence'){
+    handleSilence();
+  } else if(action === 'help'){
+    handleHelp();
+  }
+}
+
+function handleArgue(){
+  gameState.defenseCount++;
+  
+  // Player sends defense
+  var defenses = [
+    '不是我拿的！你们凭什么只凭一张照片就断定是我？我当时只是正常路过！',
+    '我真的没有拿外卖！监控只拍到我在楼下，那不是证据！',
+    '你们搞清楚再说话，我根本不认识那个丢外卖的人！'
+  ];
+  var def = defenses[Math.min(gameState.defenseCount-1, defenses.length-1)];
+  addMessage('player', '我', def);
+  
+  // Feedback
+  var fb = document.getElementById('gameFeedback');
+  fb.className = 'game-feedback red';
+  fb.textContent = '⚠ 你的辩解引来了更多攻击性回复…';
+  
+  // After short delay, 3-5 hate replies
+  setTimeout(function(){
+    var count = 3 + Math.floor(Math.random()*3); // 3-5
+    var shuffled = ARGUE_REPLIES.sort(function(){return Math.random()-0.5;});
+    for(var i=0; i<count; i++){
+      (function(j){
+        setTimeout(function(){
+          addMessage('incoming', '@匿名用户'+(j+1), shuffled[j]);
+          if(j === count-1){
+            document.getElementById('chatMeta').textContent = count + '条新消息';
+          }
+        }, j * 500 + Math.random()*300);
+      })(i);
+    }
+    
+    // Health drop
+    var dmg = 15 + Math.floor(Math.random()*6); // 15-20
+    gameState.hp = Math.max(0, gameState.hp - dmg);
+    updateHealth();
+    
+    // Check ending
+    setTimeout(function(){
+      if(gameState.hp <= 0){
+        endGame('collapse');
+        return;
+      }
+      if(gameState.defenseCount >= 4){
+        endGame('collapse');
+        return;
+      }
+      document.getElementById('gameFeedback').className = 'game-feedback yellow';
+      document.getElementById('gameFeedback').textContent = '群里的攻击还在继续…你可以再次选择';
+      setButtonsEnabled(true);
+    }, count * 800 + 400);
+    
+  }, 600);
+}
+
+function handleSilence(){
+  gameState.silenceCount++;
+  
+  addMessage('system', '', '你选择了沉默。你没有在群里回复任何消息。', true);
+  
+  var fb = document.getElementById('gameFeedback');
+  fb.className = 'game-feedback yellow';
+  fb.textContent = '谣言仍在缓慢发酵…沉默无法让它消失';
+  
+  // Slow trickle of rumors
+  setTimeout(function(){
+    var count = 1 + Math.floor(Math.random()*2); // 1-2
+    var shuffled = SILENCE_RUMORS.sort(function(){return Math.random()-0.5;});
+    for(var i=0; i<count; i++){
+      (function(j){
+        setTimeout(function(){
+          addMessage('incoming', '@围观同学', shuffled[j]);
+          if(j === count-1){
+            document.getElementById('chatMeta').textContent = count + '条新消息';
+          }
+        }, j * 600);
+      })(i);
+    }
+    
+    // Health drop
+    gameState.hp = Math.max(0, gameState.hp - 8);
+    updateHealth();
+    
+    setTimeout(function(){
+      if(gameState.hp <= 0){
+        endGame('erosion');
+        return;
+      }
+      if(gameState.silenceCount >= 6){
+        endGame('erosion');
+        return;
+      }
+      document.getElementById('gameFeedback').className = 'game-feedback yellow';
+      document.getElementById('gameFeedback').textContent = '你继续保持着沉默…但内心的消耗没有停止';
+      setButtonsEnabled(true);
+    }, count * 700 + 400);
+    
+  }, 800);
+}
+
+function handleHelp(){
+  // Player exits chat, contacts teacher
+  addMessage('system', '', '你退出了群聊，私信联系了辅导员李老师。', true);
+  addMessage('player', '我（私信辅导员）', '李老师您好，校园群里有人在未经核实的情况下，发布了我的照片，说我拿走了别人的外卖。我没有做过这件事，但现在群里都在指责我。我希望学校能帮忙查一下监控，弄清楚事实。');
+  
+  var fb = document.getElementById('gameFeedback');
+  fb.className = 'game-feedback green';
+  fb.textContent = '✅ 你已向权威第三方求助。这是最有效的自保方式。';
+  
+  setButtonsEnabled(false);
+  
+  // Supportive classmates appear
+  setTimeout(function(){
+    SUPPORT_MSGS.forEach(function(m,i){
+      setTimeout(function(){
+        addMessage('support', m.sender, m.text);
+        if(i === SUPPORT_MSGS.length-1){
+          document.getElementById('chatMeta').textContent = '讨论氛围正在转变';
+        }
+      }, i * 700);
+    });
+    
+    // HP stabilizes and recovers
+    gameState.hp = Math.min(100, gameState.hp + 5);
+    updateHealth();
+    document.getElementById('hudIcon').textContent = '💚';
+    
+  }, 1200);
+  
+  // Teacher steps in
+  setTimeout(function(){
+    TEACHER_MSGS.forEach(function(m,i){
+      setTimeout(function(){
+        addMessage('support', m.sender, m.text);
+      }, i * 600);
+    });
+  }, 3500);
+  
+  // Truth revealed
+  setTimeout(function(){
+    TRUTH_REVEAL.forEach(function(m,i){
+      setTimeout(function(){
+        addMessage(m.system ? 'system' : 'support', m.sender, m.text, m.system || false);
+        if(i === TRUTH_REVEAL.length-1){
+          document.getElementById('chatMeta').textContent = '真相大白';
+          document.getElementById('gameFeedback').className = 'game-feedback green';
+          document.getElementById('gameFeedback').textContent = '✅ 真相查明，你的清白得到证实';
+        }
+      }, i * 700);
+    });
+    
+    // HP continues recovery
+    gameState.hp = Math.min(100, gameState.hp + 10);
+    updateHealth();
+    
+    setTimeout(function(){ endGame('vindicated'); }, 2500);
+  }, 5500);
+}
+
+function updateHealth(){
+  document.getElementById('healthFill').style.width = gameState.hp + '%';
+  document.getElementById('healthPct').textContent = gameState.hp + '%';
+  
+  if(gameState.hp <= 20){
+    document.getElementById('healthFill').style.background = '#ef4444';
+    document.getElementById('hudIcon').textContent = '💔';
+  } else if(gameState.hp <= 40){
+    document.getElementById('healthFill').style.background = '#eab308';
+    document.getElementById('hudIcon').textContent = '😰';
+  } else if(gameState.hp <= 70){
+    document.getElementById('healthFill').style.background = '#f59e0b';
+    document.getElementById('hudIcon').textContent = '😟';
+  } else {
+    document.getElementById('healthFill').style.background = 'linear-gradient(90deg,#22c55e,#4ade80,#eab308,#ef4444)';
+    document.getElementById('hudIcon').textContent = '🧠';
+  }
+  
+  // Darken when HP < 40
+  if(gameState.hp < 40){
+    document.getElementById('keyboard-judge').classList.add('darkened');
+  } else {
+    document.getElementById('keyboard-judge').classList.remove('darkened');
+  }
+}
+
+function endGame(ending){
+  gameState.ended = true;
+  setButtonsEnabled(false);
+  document.getElementById('gameChoiceRow').style.display = 'none';
+  document.getElementById('gameFeedback').textContent = '';
+  
+  // Save to localStorage
+  try {
+    var history = JSON.parse(localStorage.getItem('campusGameHistory') || '[]');
+    history.push({ending:ending,hp:gameState.hp,time:new Date().toISOString()});
+    localStorage.setItem('campusGameHistory', JSON.stringify(history));
+    localStorage.setItem('campusGameLastEnding', ending);
+  } catch(e){}
+  
+  var panel = document.getElementById('gameOver');
+  if(ending === 'collapse'){
+    document.getElementById('gameOverEmoji').textContent = '💔';
+    document.getElementById('gameOverMsg').textContent = '结局：舆论崩盘';
+    document.getElementById('gameOverDetail').innerHTML = '心理健康值跌至 <strong>'+gameState.hp+'%</strong>。<br>你试图逐条解释，但每一条澄清都引来了更多的攻击。<br>在情绪化的群聊环境里，<strong>辩解只会让争议越来越大</strong>。<br><br>谣言在学生群体中持续扩散，你最终因无法承受压力而崩溃。';
+    var q = '「在情绪化的网络环境里，<br>单纯自证无法说服已经先入为主的围观者，<br>只会引来更多跟风非议。」';
+  } else if(ending === 'erosion'){
+    document.getElementById('gameOverEmoji').textContent = '😶';
+    document.getElementById('gameOverMsg').textContent = '结局：被动内耗';
+    document.getElementById('gameOverDetail').innerHTML = '心理健康值降至 <strong>'+gameState.hp+'%</strong>。<br>你没有开口辩驳，但沉默没有让流言停止。<br>时间一天天过去，<strong>伤害不会因为不争论就消失</strong>。<br><br>长期的隐忍消耗了你的情绪，你渐渐从社交中抽离。';
+    var q = '「不回应不代表不受伤害。<br>沉默无法阻止谣言，<br>它只是让你独自承受一切。」';
+  } else {
+    document.getElementById('gameOverEmoji').textContent = '🕊️';
+    document.getElementById('gameOverMsg').textContent = '结局：成功自证';
+    document.getElementById('gameOverDetail').innerHTML = '心理健康值维持在 <strong>'+gameState.hp+'%</strong>。<br>你没有跟围观者争吵，也没有独自承受，而是第一时间<strong>向辅导员求助</strong>。<br><br>保卫处调取完整监控，查明真相：外卖是一个戴口罩的校外人员拿走的。<br>管理员撤回了不实消息，谣言停止传播。<br><br>你的名字被澄清了。';
+    var q = '「面对无依据的指控，<br>寻求权威第三方介入，<br>才是最有效的自保方式。」';
+  }
+  document.getElementById('gameOverQuote').innerHTML = q;
+  document.getElementById('gameOver').classList.add('show');
+  
+  // Scroll to game area
+  document.getElementById('keyboard-judge').scrollIntoView({behavior:'smooth'});
+}
+
+</script>
+</body>
+</html>
